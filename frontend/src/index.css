@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+}
+
+/* Hide number input arrows */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Global button reset and base styles */
+@layer base {
+  /* Button base reset - only set necessary defaults, don't override component styles */
+  button {
+    @apply cursor-pointer;
+    @apply focus:outline-none;
+    /* Don't set default background and border, let component styles take effect */
+  }
+  
+  button:disabled {
+    @apply cursor-not-allowed opacity-50;
+  }
+  
+  /* Input base styles - only set necessary ones, components can override */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"] {
+    @apply focus:outline-none;
+    @apply transition-all duration-200;
+  }
+  
+  input::placeholder {
+    @apply text-gray-500;
+  }
+}
+
+/* Custom button styles (replacing DaisyUI btn classes) */
+@layer components {
+  .btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700;
+    @apply focus:ring-blue-500;
+  }
+
+  .btn-outline {
+    @apply border border-gray-600 text-gray-300 bg-transparent hover:bg-gray-800;
+    @apply focus:ring-gray-500;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  /* Loading spinner styles (replacing DaisyUI loading classes) */
+  .loading {
+    @apply inline-block;
+  }
+
+  .loading-spinner {
+    @apply animate-spin rounded-full border-2 border-current border-t-transparent;
+  }
+
+  .loading-xs {
+    @apply w-3 h-3;
+  }
+
+  .loading-sm {
+    @apply w-4 h-4;
+  }
+
+  .loading-md {
+    @apply w-6 h-6;
+  }
+
+  .loading-lg {
+    @apply w-8 h-8;
+  }
+
+  /* Alert styles (replacing DaisyUI alert classes) */
+  .alert {
+    @apply p-4 rounded-lg border;
+  }
+
+  .alert-error {
+    @apply bg-red-900/20 border-red-700/50 text-red-400;
+  }
+
+  .text-primary {
+    @apply text-blue-400;
+  }
+}
