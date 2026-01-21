@@ -300,6 +300,40 @@ Edit `frontend/src/config/`:
 - `contracts.ts` - Contract addresses and ABIs
 - `ipfs.ts` - IPFS gateway configuration
 
+### Pool Configuration (Single Source of Truth)
+
+**All pool parameters are centralized in `src/PoolConfig.sol`:**
+
+```solidity
+// src/PoolConfig.sol
+library PoolConfig {
+    address public constant POOL_MANAGER = 0xaD...;
+    address public constant TOKEN_A = 0x0000...;
+    address public constant TOKEN_B = 0x4116...;
+    
+    uint24 public constant FEE = LPFeeLibrary.DYNAMIC_FEE_FLAG;
+    int24 public constant TICK_SPACING = 59;
+    
+    int24 public constant TICK_LOWER = -887183;  // Aligned with tickSpacing
+    int24 public constant TICK_UPPER = 887183;
+    bytes32 public constant SALT = 0x00...;
+}
+```
+
+**Access configuration in scripts:**
+
+```bash
+# Shell scripts
+source scripts/load_pool_config.sh
+echo $POOL_CONFIG_TICK_LOWER
+
+# Node.js scripts
+import { loadPoolConfig } from './loadPoolConfig.mjs';
+const config = loadPoolConfig();
+```
+
+📚 See `POOL_CONFIG_CENTRALIZATION.md` for details.
+
 ### Environment Variables
 
 Create `frontend/.env.local`:
@@ -342,6 +376,14 @@ See [MOBILE_QUICK_START.md](./MOBILE_QUICK_START.md) for mobile debugging guide.
 - Check network connection settings
 
 ## 📚 Documentation
+
+### Project Documentation
+
+- [`POOL_CONFIG_CENTRALIZATION.md`](POOL_CONFIG_CENTRALIZATION.md) - Configuration management guide
+- [`TICK_ALIGNMENT_FIX.md`](TICK_ALIGNMENT_FIX.md) - Tick alignment troubleshooting
+- [`AGENTS.md`](AGENTS.md) - Guidelines for AI agents
+
+### External Resources
 
 - [Foundry Book](https://book.getfoundry.sh/)
 - [Uniswap V4 Core](https://github.com/Uniswap/v4-core)

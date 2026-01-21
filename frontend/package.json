@@ -1,7 +1,7 @@
 {
     "name": "uniswap-v4-local-frontend",
     "private": true,
-    "version": "1.0.36",
+    "version": "1.0.55",
     "type": "module",
     "scripts": {
         "dev": "vite",
