@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
 import { formatUnits } from 'viem'
 import { NFTImageReveal } from './NFTImageReveal'
-import { NFTImageViewer } from './NFTImageViewer'
 import { CONTRACTS, HUKU_NFT_ABI, ERC20_ABI } from '../config/contracts'
 import { useEventAssociation } from '../hooks/useEventAssociation'
 import { useWebSocket } from '../hooks/useWebSocket'
@@ -32,7 +31,11 @@ interface MintEligibilityResponse {
     uint256_param?: number  // Backend returns uint256_param, not remark
 }
 
-export function NFTSection() {
+interface NFTSectionProps {
+    onViewAll?: () => void
+}
+
+export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
     const { address } = useAccount()
     const [nfts, setNfts] = useState<NFT[]>([])
     const [isLoading, setIsLoading] = useState(false)
@@ -40,7 +43,6 @@ export function NFTSection() {
     const [mintingNftId, setMintingNftId] = useState<number | null>(null) // NFT ID currently minting
     const [approvingNftId, setApprovingNftId] = useState<number | null>(null) // NFT ID currently approving
     const [burningNftId, setBurningNftId] = useState<number | null>(null) // NFT ID currently burning
-    const [viewingNftId, setViewingNftId] = useState<number | null>(null) // NFT ID currently viewing
     // ✅ Independent approve status for each NFT: track which NFTs have completed approve (for displaying correct button)
     const [approvedNftIds, setApprovedNftIds] = useState<Set<number>>(new Set())
     const timeoutRef = useRef<NodeJS.Timeout | null>(null) // Timeout timer reference
@@ -637,16 +639,20 @@ export function NFTSection() {
             setMintingNftId(null)
             setApprovingNftId(null)
             setBurningNftId(null)
-            setViewingNftId(null)
         }
     }, [address])
 
     if (!address) {
         return (
-            <div style={{ marginTop: '1rem' }}>
+            <div>
                 <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
                     My NFTs
-                    <span className="text-xs font-normal text-blue-400 cursor-pointer hover:underline">view all</span>
+                    <span 
+                        onClick={onViewAll}
+                        className="text-xs font-normal text-blue-400 cursor-pointer hover:underline"
+                    >
+                        view all
+                    </span>
                 </h3>
                 <div className="text-center text-gray-500 py-10">
                     Please connect your wallet to view NFTs
@@ -699,7 +705,7 @@ export function NFTSection() {
     }
 
     return (
-        <div style={{ marginTop: '1rem' }}>
+        <div>
             <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
                 My NFTs
                 <button
@@ -718,7 +724,12 @@ export function NFTSection() {
                         </svg>
                     )}
                 </button>
-                <span className="text-xs font-normal text-blue-400 cursor-pointer hover:underline">view all</span>
+                <span 
+                    onClick={onViewAll}
+                    className="text-xs font-normal text-blue-400 cursor-pointer hover:underline"
+                >
+                    view all
+                </span>
             </h3>
 
             {isLoading ? (
@@ -745,7 +756,7 @@ export function NFTSection() {
                         const isApproved = approvedNftIds.has(nft.nft_id)
                         const canMint = nft.all_chips_owned && nft.is_mint === 0
                         console.log(`[NFTSection] Rendering NFT #${nft.nft_id}:`, {
-                                            isApproved,
+                            isApproved,
                             canMint,
                             approvedNftIds: [...approvedNftIds],
                             button: isApproved && canMint ? 'Mint NFT' : canMint ? 'Mint' : 'N/A'
@@ -1074,7 +1085,7 @@ export function NFTSection() {
                                                 }`}
                                                 title="Revoke all authorization (set allowance to 0)"
                                                 style={{ minWidth: 'auto', flexShrink: 0 }}
-                                                >
+                                            >
                                                 {revokingNftId === nft.nft_id && (isRevokeConfirming || isRevokePending)
                                                     ? 'Revoking...'
                                                     : 'Revoke'}
@@ -1152,12 +1163,6 @@ export function NFTSection() {
                                             <span>Minting...</span>
                                         </button>
                                     ) : null}
-                                    <button 
-                                        onClick={() => setViewingNftId(nft.nft_id)}
-                                        className="flex-1 bg-[#2a2b36] hover:bg-[#3a3b46] text-white text-xs py-2 rounded-lg transition-colors"
-                                    >
-                                        View Details
-                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -1165,18 +1170,6 @@ export function NFTSection() {
                     })}
                 </div>
             )}
-            
-            {/* NFT Image Viewer */}
-            {viewingNftId !== null && (() => {
-                const viewingNft = nfts.find(n => n.nft_id === viewingNftId)
-                return viewingNft ? (
-                    <NFTImageViewer
-                        nft={viewingNft}
-                        isOpen={true}
-                        onClose={() => setViewingNftId(null)}
-                    />
-                ) : null
-            })()}
         </div>
     )
 }

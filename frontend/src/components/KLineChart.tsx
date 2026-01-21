@@ -171,6 +171,9 @@ export function KLineChart() {
     useEffect(() => {
         if (!chartContainerRef.current) return
 
+        // Detect if mobile (screen width < 768px)
+        const isMobile = window.innerWidth < 768
+
         const chart = createChart(chartContainerRef.current, {
             width: chartContainerRef.current.clientWidth,
             height: 130,
@@ -181,7 +184,10 @@ export function KLineChart() {
             },
             grid: {
                 vertLines: { color: '#2a2b36' },
-                horzLines: { color: '#2a2b36' }
+                horzLines: { 
+                    color: '#2a2b36',
+                    visible: !isMobile  // Hide horizontal grid lines on mobile
+                }
             },
             crosshair: {
                 mode: 1
@@ -242,8 +248,16 @@ export function KLineChart() {
         // Handle resize
         const handleResize = () => {
             if (chartContainerRef.current && chartRef.current) {
+                const isMobile = window.innerWidth < 768
                 chartRef.current.applyOptions({
-                    width: chartContainerRef.current.clientWidth
+                    width: chartContainerRef.current.clientWidth,
+                    grid: {
+                        vertLines: { color: '#2a2b36' },
+                        horzLines: { 
+                            color: '#2a2b36',
+                            visible: !isMobile  // Update visibility on resize
+                        }
+                    }
                 })
             }
         }

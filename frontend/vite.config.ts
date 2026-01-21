@@ -59,9 +59,9 @@ export default defineConfig({
                     })
                 }
             },
-            // IPFS proxy for nftstorage.link - adds CORS headers for Canvas access
+            // IPFS proxy for ipfs.io - adds CORS headers for Canvas access
             '/ipfs-proxy': {
-                target: 'https://nftstorage.link',
+                target: 'https://ipfs.io',
                 changeOrigin: true,
                 rewrite: (path) => path.replace(/^\/ipfs-proxy/, '/ipfs'),
                 configure: (proxy, _options) => {

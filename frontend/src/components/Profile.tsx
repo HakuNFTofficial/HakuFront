@@ -76,7 +76,7 @@ export function Profile() {
         if (filter === 'all') return true
         if (filter === 'burned') return nft.is_mint === 2
         if (filter === 'minted') {
-            // Minted: is_mint === 1 OR (is_mint === 0 AND owned_chips_count === total_chips_count)
+            // Mintable: is_mint === 1 OR (is_mint === 0 AND owned_chips_count === total_chips_count)
             return nft.is_mint === 1 || (nft.is_mint === 0 && nft.owned_chips_count === nft.total_chips_count)
         }
         return true
@@ -95,7 +95,7 @@ export function Profile() {
             return { label: 'Burnable', color: 'bg-red-500/20 text-red-400 border-red-500/50' }
         }
         if (nft.is_mint === 1) {
-            return { label: 'Minted', color: 'bg-blue-500/20 text-blue-400 border-blue-500/50' }
+            return { label: 'Mintable', color: 'bg-blue-500/20 text-blue-400 border-blue-500/50' }
         }
         if (nft.owned_chips_count === nft.total_chips_count) {
             return { label: 'Mintable', color: 'bg-green-500/20 text-green-400 border-green-500/50' }
@@ -143,7 +143,7 @@ export function Profile() {
                             : 'bg-gray-800/50 text-gray-400 border border-gray-700/50 hover:bg-gray-700/50'
                     }`}
                 >
-                    Minted ({mintedCount})
+                    Mintable ({mintedCount})
                 </button>
             </div>
 

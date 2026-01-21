@@ -217,7 +217,7 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
                         setChips(correctedChips)
                     } else {
                         // Count matches, set normally
-                        setChips(validChips)
+                    setChips(validChips)
                     }
                 } else {
                     console.error('[NFTImageReveal] Invalid chips data format:', data)
@@ -901,9 +901,9 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
                     Relight
                 </button>
                 
-            </div>
-            )}
-            
+                            </div>
+                        )}
+                        
           
            
         </div>

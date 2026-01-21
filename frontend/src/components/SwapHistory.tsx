@@ -43,11 +43,11 @@ const formatAmount = (amount: string, decimals: number = 18) => {
     try {
         const value = parseAmount(amount)
         const formatted = formatUnits(value, decimals)
-        // Format to 4 decimal places
-        return parseFloat(formatted).toFixed(4)
+        // Format to 2 decimal places
+        return parseFloat(formatted).toFixed(2)
     } catch (e) {
         console.error("Error formatting amount:", amount, e)
-        return "0.0000"
+        return "0.00"
     }
 }
 
