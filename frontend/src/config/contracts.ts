@@ -1,13 +1,13 @@
-// Contract addresses from deployment on Somnia Testnet
+// Contract addresses from deployment on Arc Testnet
 export const CONTRACTS = {
-    POOL_MANAGER: '0xaD05f7c50825374aE2dE3F29d36346FB98512182',
+    POOL_MANAGER: '0x447032aAa569105437516dA21792862Bf05422C6',
     POSITION_MANAGER: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
-    TOKEN_A: '0x0000000000000000000000000000000000000000', // STT (native token)
-    TOKEN_B: '0x41166CCe5C4C6673e7eF4c59169896d7e29c89f3', // HakuToken Proxy
-    SWAP_ROUTER: '0x39B499c55eAF4d6c2dE66943b4d21e4dbE54170A',
-    ADD_LIQUIDITY_EXECUTOR: '0xB93Fcd0919b8cB83abEb417060D9120Db8Bc90B0', // AddLiquidityExecutor Proxy
+    TOKEN_A: '0x0000000000000000000000000000000000000000', // Arc native USDC
+    TOKEN_B: '0x19c02CC2118Afe3CB59bb2f777d1a1124c7A6C12', // HakuToken Proxy
+    SWAP_ROUTER: '0x100e99CB47c737Db4f3399a0b6195276cF9f77a9',
+    ADD_LIQUIDITY_EXECUTOR: '0x6B184D87FdcD84C111a149289DCdAA40376EEB24', // AddLiquidityExecutor Proxy
     // V4Quoter contract address (must match QUOTER in PoolConfig.sol)
-    QUOTER: '0x7DF0e31F8860F6659B894B6a1b41e6d92888A21d', // V4Quoter contract
+    QUOTER: '0xda497413594473EC8dDDeC7711595D75239A47E1', // V4Quoter contract
     // HukuNFT contract address
     HUKU_NFT: '0x8557aFC94164F53a0828EB4ca16afE7dE280BE34',
 } as const
@@ -25,16 +25,16 @@ export const DYNAMIC_FEE_FLAG = 0x800000 // LPFeeLibrary.DYNAMIC_FEE_FLAG
 export const POOL_CONFIG = {
     // currency0 and currency1 are sorted automatically (smaller address is currency0)
     // But for clarity, we specify them explicitly
-    CURRENCY0: CONTRACTS.TOKEN_A, // STT (native token, address 0x0)
+    CURRENCY0: CONTRACTS.TOKEN_A, // Arc native USDC, address 0x0
     CURRENCY1: CONTRACTS.TOKEN_B, // HakuToken Proxy
 
     // Pool Parameters
     FEE: DYNAMIC_FEE_FLAG,  // Dynamic fee flag (0x800000) - actual fee set by hook
     HOOK_FEE: 3000,         // Actual fee rate set by hook: 0.3% (3000 basis points)
-    TICK_SPACING: 59,       // Tick spacing
-    HOOKS: '0xe944714Cdd3db46821D54a4B07e5f32faaFF0088' as `0x${string}`, // Hook address
-    SQRT_PRICE_X96: '2505414483750479311832031227609', // Corresponds to 1:100 price (1 STT = 100 HakuToken)
-    POOL_ID: '0xc210752206e318e6a93454a091e6db915a7118f1b99d6bbacef6a4815bc13be5' as `0x${string}`,
+    TICK_SPACING: 60,       // Tick spacing
+    HOOKS: '0xd6f7f563225bad9ceab2b31aaddd19f17a89c088' as `0x${string}`, // Hook address
+    SQRT_PRICE_X96: '2505414483750479311832031227609', // 1 native USDC = 1000 HakuToken
+    POOL_ID: '0xdf93f8efd49f7d7c9d0c5c3b781afaf120d26fc1a5f991eea263bb62f029461e' as `0x${string}`,
 
     // Other contract addresses (must match PoolConfig.sol)
     QUOTER: CONTRACTS.QUOTER, // V4Quoter contract address
@@ -318,4 +318,3 @@ export const HUKU_NFT_ABI = [
         ],
     },
 ] as const
-
