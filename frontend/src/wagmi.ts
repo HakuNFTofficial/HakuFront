@@ -2,27 +2,24 @@ import { http, createConfig } from 'wagmi'
 import { injected } from 'wagmi/connectors'
 import { defineChain } from 'viem'
 
-// Define Somnia testnet
-export const somnia = defineChain({
-    id: 50312,
-    name: 'Somnia Testnet',
+// Define Arc testnet
+export const arcTestnet = defineChain({
+    id: 5042002,
+    name: 'Arc Testnet',
     nativeCurrency: {
         decimals: 18,
-        name: 'STT',
-        symbol: 'STT',
+        name: 'USDC',
+        symbol: 'USDC',
     },
     rpcUrls: {
         default: {
-            http: ['https://dream-rpc.somnia.network'],
+            http: ['https://rpc.testnet.arc.network'],
         },
-    },
-    blockExplorers: {
-        default: { name: 'Explorer', url: 'https://somnia-devnet.socialscan.io' },
     },
 })
 
 export const config = createConfig({
-    chains: [somnia],
+    chains: [arcTestnet],
     connectors: [
         // Injected connector for MetaMask, Trust Wallet, OKX, etc.
         injected({
@@ -35,6 +32,6 @@ export const config = createConfig({
         }),
     ],
     transports: {
-        [somnia.id]: http('https://dream-rpc.somnia.network'),
+        [arcTestnet.id]: http('https://rpc.testnet.arc.network'),
     },
 })

@@ -46,9 +46,9 @@ export const POOL_CONFIG = {
  */
 export const TRADING_PAIR_CONFIG = {
     // Token symbols for display
-    BASE_TOKEN_SYMBOL: 'STT',      // Base token symbol
+    BASE_TOKEN_SYMBOL: 'USDC',     // Base token symbol
     QUOTE_TOKEN_SYMBOL: 'HakuToken', // Quote token symbol
-    PAIR_NAME: 'STT/HakuToken',    // Trading pair name (for display)
+    PAIR_NAME: 'USDC/HakuToken',   // Trading pair name (for display)
 
     // API related configuration
     PAIR_ID: 1,                    // Backend API pair_id

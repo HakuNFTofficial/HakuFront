@@ -33,7 +33,7 @@ export function Swap() {
         functionName: 'decimals',
     })
 
-    // Query STT balance (native token)
+    // Query USDC balance (native token)
     const { data: sttBalance, isLoading: isLoadingSTT } = useBalance({
         address: address,
         query: {
@@ -61,8 +61,8 @@ export function Swap() {
         functionName: 'symbol',
     })
 
-    const tokenASymbol = 'STT'
-    const tokenADecimals = 18 // STT is native token, always 18 decimals
+    const tokenASymbol = 'USDC'
+    const tokenADecimals = 18 // USDC is native token, always 18 decimals
     const tokenPay = mode === 'buy'
         ? { address: CONTRACTS.TOKEN_A, symbol: tokenASymbol }
         : { address: CONTRACTS.TOKEN_B, symbol: (tokenBName as string) || 'TokenB' }
@@ -223,9 +223,9 @@ export function Swap() {
 
         // Uniswap V4 price formula: price = (sqrtPriceX96 / 2^96)^2
         // In Uniswap, price = token1 / token0
-        // In our pool: currency0 = STT (TOKEN_A), currency1 = TokenB
-        // So price = TokenB / STT
-        // Therefore: 1 STT = 1/price TokenB, 1 TokenB = price STT
+        // In our pool: currency0 = USDC (TOKEN_A), currency1 = TokenB
+        // So price = TokenB / USDC
+        // Therefore: 1 USDC = 1/price TokenB, 1 TokenB = price USDC
 
         const Q96 = 2n ** 96n
         const Q96_SQUARED = Q96 * Q96
@@ -248,13 +248,13 @@ export function Swap() {
         //     Q96_SQUARED: Q96_SQUARED.toString(),
         //     priceBigInt: priceBigInt.toString(),
         //     priceTokenBPerSTT,
-        //     sttToTokenB: priceSTTPerTokenB,  // 1 STT = ? TokenB (i.e. 1/price)
-        //     tokenBToSTT: priceTokenBPerSTT   // 1 TokenB = ? STT (i.e. price)
+        //     sttToTokenB: priceSTTPerTokenB,  // 1 USDC = ? TokenB (i.e. 1/price)
+        //     tokenBToSTT: priceTokenBPerSTT   // 1 TokenB = ? USDC (i.e. price)
         // })
 
         return {
-            sttToTokenB: priceSTTPerTokenB,  // 1 STT = ? TokenB
-            tokenBToSTT: priceTokenBPerSTT,  // 1 TokenB = ? STT
+            sttToTokenB: priceSTTPerTokenB,  // 1 USDC = ? TokenB
+            tokenBToSTT: priceTokenBPerSTT,  // 1 TokenB = ? USDC
             sqrtPriceX96Debug: sqrtPriceX96.toString()
         }
     }, [poolSlot0])
@@ -288,8 +288,8 @@ export function Swap() {
         }
 
         // zeroForOne: true if swapping currency0 -> currency1
-        // buy mode: STT (currency0) -> HakuToken (currency1), so zeroForOne = true
-        // sell mode: HakuToken (currency1) -> STT (currency0), so zeroForOne = false
+        // buy mode: USDC (currency0) -> HakuToken (currency1), so zeroForOne = true
+        // sell mode: HakuToken (currency1) -> USDC (currency0), so zeroForOne = false
         const zeroForOne = mode === 'buy'
 
         return {
@@ -522,7 +522,7 @@ export function Swap() {
                                     if (uint256_2 > uint256_1) {
                                         const minAmount = formatUnits(uint256_1, outputDecimals)
                                         const actualAmount = formatUnits(uint256_2, outputDecimals)
-                                        const tokenName = mode === 'buy' ? 'HakuToken' : 'STT'
+                                        const tokenName = mode === 'buy' ? 'HakuToken' : 'USDC'
                                         errorMessage = `Slippage protection failed: Expected at least ${minAmount} ${tokenName}, but can only receive ${actualAmount} ${tokenName}.\n\nSuggestions:\n1. Reduce slippage tolerance\n2. Decrease trade amount\n3. Try again later (price may have changed)`
                                     } else {
                                         errorMessage = `Transaction failed: Unknown error (selector: ${errorSelector})`
@@ -574,13 +574,13 @@ export function Swap() {
                 {address && (
                     <div className="mb-4 flex items-center justify-between">
                         {mode === 'buy' ? (
-                            // Buy mode: show STT balance
+                            // Buy mode: show USDC balance
                             <>
                                 <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                                        STT
+                                        USDC
                                     </div>
-                                    <div className="text-white text-sm font-medium">STT</div>
+                                    <div className="text-white text-sm font-medium">USDC</div>
                                 </div>
                                 <div className="text-white text-sm font-semibold">
                                     {isLoadingSTT ? (
@@ -751,11 +751,11 @@ export function Swap() {
                             <div className="text-white text-sm space-y-1">
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-400">Input:</span>
-                                    <span className="font-mono font-semibold">{parseFloat(amount).toFixed(4)} {mode === 'buy' ? 'STT' : 'HakuToken'}</span>
+                                    <span className="font-mono font-semibold">{parseFloat(amount).toFixed(4)} {mode === 'buy' ? 'USDC' : 'HakuToken'}</span>
                                 </div>
                                 <div className="flex items-center justify-between">
                                     <span className="text-gray-400">≈ You will receive:</span>
-                                    <span className="font-mono font-semibold text-green-400">{quoteInfo.amountOutFloat.toFixed(4)} {mode === 'buy' ? 'HakuToken' : 'STT'}</span>
+                                    <span className="font-mono font-semibold text-green-400">{quoteInfo.amountOutFloat.toFixed(4)} {mode === 'buy' ? 'HakuToken' : 'USDC'}</span>
                                 </div>
                                 <div className="flex items-center justify-between pt-1 border-t border-gray-700/50">
                                     <span className="text-gray-400">Slippage:</span>
@@ -841,7 +841,7 @@ export function Swap() {
                         let currentBalance = 0
 
                         if (mode === 'buy') {
-                            // Buy mode: use STT balance
+                            // Buy mode: use USDC balance
                             currentBalance = sttBalance ? parseFloat(formatEther(sttBalance.value)) : 0
                         } else {
                             // Sell mode: use HakuToken balance

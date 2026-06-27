@@ -119,14 +119,13 @@ function App() {
                         params: [
                             {
                                 chainId: targetChainIdHex,
-                                chainName: 'Somnia Testnet',
+                                chainName: 'Arc Testnet',
                                 nativeCurrency: {
-                                    name: 'STT',
-                                    symbol: 'STT',
+                                    name: 'USDC',
+                                    symbol: 'USDC',
                                     decimals: 18,
                                 },
-                                rpcUrls: ['https://dream-rpc.somnia.network'],
-                                blockExplorerUrls: ['https://somnia-devnet.socialscan.io'],
+                                rpcUrls: ['https://rpc.testnet.arc.network'],
                             },
                         ],
                     })

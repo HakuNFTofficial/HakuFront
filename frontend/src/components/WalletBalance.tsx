@@ -6,7 +6,7 @@ import { CONTRACTS, ERC20_ABI } from '../config/contracts'
  * Wallet Balance Component - Similar to blockchain explorer's balance display
  * 
  * Blockchain explorer mechanism:
- * 1. Native token balance (ETH/STT): Uses RPC call eth_getBalance(address)
+ * 1. Native token balance (USDC): Uses RPC call eth_getBalance(address)
  * 2. ERC20 token balance: Calls balanceOf(address) on token contract
  * 
  * This component implements the same functionality using wagmi hooks
@@ -14,7 +14,7 @@ import { CONTRACTS, ERC20_ABI } from '../config/contracts'
 export function WalletBalance() {
     const { address, isConnected } = useAccount()
 
-    // 1. Query native token balance (STT) - corresponds to eth_getBalance in blockchain explorer
+    // 1. Query native token balance (USDC) - corresponds to eth_getBalance in blockchain explorer
     const { data: nativeBalance, isLoading: isLoadingNative } = useBalance({
         address: address,
         query: {
@@ -60,13 +60,13 @@ export function WalletBalance() {
     return (
         <div className="w-full bg-[#1a1b23] rounded-2xl p-4 shadow-2xl border border-gray-800">
             <div className="space-y-3">
-                {/* Native token balance (STT) */}
+                {/* Native token balance (USDC) */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                            STT
+                            USDC
                         </div>
-                        <div className="text-white text-sm font-medium">STT</div>
+                        <div className="text-white text-sm font-medium">USDC</div>
                     </div>
                     <div className="text-right">
                         {isLoadingNative ? (
@@ -103,4 +103,3 @@ export function WalletBalance() {
         </div>
     )
 }
-
