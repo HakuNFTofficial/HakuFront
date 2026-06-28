@@ -3,7 +3,7 @@ import { useFeeData, useAccount, useWriteContract, useReadContract, useBalance }
 import { parseUnits, formatUnits, keccak256, encodeAbiParameters, encodePacked, formatEther } from 'viem'
 import { CONTRACTS, POOL_CONFIG, SWAP_CONFIG, SWAP_EXECUTOR_ABI, ERC20_ABI, POOL_MANAGER_ABI, QUOTER_ABI } from '../config/contracts'
 import { useWalletChainId } from '../hooks/useWalletChainId'
-import { REQUIRED_CHAIN_ID, getChainName } from '../config/chain'
+import { ARC_NATIVE_SYMBOL, REQUIRED_CHAIN_ID, getChainName } from '../config/chain'
 
 export function Swap() {
     const { address } = useAccount()
