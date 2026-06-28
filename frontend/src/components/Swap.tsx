@@ -3,7 +3,7 @@ import { useFeeData, useAccount, useWriteContract, useReadContract, useBalance }
 import { parseUnits, formatUnits, keccak256, encodeAbiParameters, encodePacked, formatEther } from 'viem'
 import { CONTRACTS, POOL_CONFIG, SWAP_CONFIG, SWAP_EXECUTOR_ABI, ERC20_ABI, POOL_MANAGER_ABI, QUOTER_ABI } from '../config/contracts'
 import { useWalletChainId } from '../hooks/useWalletChainId'
-import { ARC_NATIVE_SYMBOL, REQUIRED_CHAIN_ID, getChainName } from '../config/chain'
+import { REQUIRED_CHAIN_ID, getChainName } from '../config/chain'
 
 export function Swap() {
     const { address } = useAccount()
@@ -370,8 +370,8 @@ export function Swap() {
 
     const normalizeArcNativeCurrencyMessage = (message: string) =>
         message
-            .replace(/\bETH\b/g, ARC_NATIVE_SYMBOL)
-            .replace(/\beth\b/g, ARC_NATIVE_SYMBOL)
+            .replace(/\bETH\b/g, tokenASymbol)
+            .replace(/\beth\b/g, tokenASymbol)
 
     const isUserRejectedTransaction = (message: string) =>
         /user rejected|user denied|rejected the request|request rejected/i.test(message)
@@ -502,7 +502,7 @@ export function Swap() {
             // Try to parse error message
             if (writeError.message) {
                 if (isUserRejectedTransaction(writeError.message)) {
-                    errorMessage = `Transaction cancelled by wallet.\n\nOn Arc Testnet, the native payment token is ${ARC_NATIVE_SYMBOL}. The EVM transaction "value" field represents native ${ARC_NATIVE_SYMBOL}, even if a wallet or library formats it as ETH in raw request details.`
+                    errorMessage = `Transaction cancelled by wallet.\n\nOn Arc Testnet, the native payment token is ${tokenASymbol}. The EVM transaction "value" field represents native ${tokenASymbol}, even if a wallet or library formats it as ETH in raw request details.`
                 } else if (writeError.message.includes('estimateGas') || writeError.message.includes('execution reverted')) {
                     // Try to decode error message from error data
                     const errorData = (writeError as any).data
