@@ -368,6 +368,14 @@ export function Swap() {
  
     const outputDecimals = mode === 'buy' ? (tokenBDecimals ?? 18) : tokenADecimals
 
+    const normalizeArcNativeCurrencyMessage = (message: string) =>
+        message
+            .replace(/\bETH\b/g, ARC_NATIVE_SYMBOL)
+            .replace(/\beth\b/g, ARC_NATIVE_SYMBOL)
+
+    const isUserRejectedTransaction = (message: string) =>
+        /user rejected|user denied|rejected the request|request rejected/i.test(message)
+
     const handleApprove = () => {
         if (!amount || !address) {
             return
@@ -396,6 +404,7 @@ export function Swap() {
             abi: ERC20_ABI,
             functionName: 'approve',
             args: [CONTRACTS.SWAP_ROUTER, amountWei],
+            chainId: REQUIRED_CHAIN_ID,
             type: 'eip1559',
             maxFeePerGas,
             maxPriorityFeePerGas,
@@ -470,6 +479,7 @@ export function Swap() {
             abi: SWAP_EXECUTOR_ABI,
             functionName,
             args: [amountWei, minAmountOut], // Pass minAmountOut to enable slippage protection
+            chainId: REQUIRED_CHAIN_ID,
             type: 'eip1559',
             maxFeePerGas,
             maxPriorityFeePerGas,
@@ -491,8 +501,9 @@ export function Swap() {
             
             // Try to parse error message
             if (writeError.message) {
-                // Check if gas estimation error
-                if (writeError.message.includes('estimateGas') || writeError.message.includes('execution reverted')) {
+                if (isUserRejectedTransaction(writeError.message)) {
+                    errorMessage = `Transaction cancelled by wallet.\n\nOn Arc Testnet, the native payment token is ${ARC_NATIVE_SYMBOL}. The EVM transaction "value" field represents native ${ARC_NATIVE_SYMBOL}, even if a wallet or library formats it as ETH in raw request details.`
+                } else if (writeError.message.includes('estimateGas') || writeError.message.includes('execution reverted')) {
                     // Try to decode error message from error data
                     const errorData = (writeError as any).data
                     if (errorData) {
@@ -544,7 +555,7 @@ export function Swap() {
                         errorMessage = `Transaction failed: Gas estimation failed. Slippage protection may have triggered or price has changed.`
                     }
                 } else {
-                    errorMessage += writeError.message
+                    errorMessage += normalizeArcNativeCurrencyMessage(writeError.message)
                 }
             } else {
                 errorMessage += 'Unknown error'
