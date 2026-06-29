@@ -9,7 +9,7 @@ export const CONTRACTS = {
     // V4Quoter contract address (must match QUOTER in PoolConfig.sol)
     QUOTER: '0xda497413594473EC8dDDeC7711595D75239A47E1', // V4Quoter contract
     // HukuNFT contract address
-    HUKU_NFT: '0x8557aFC94164F53a0828EB4ca16afE7dE280BE34',
+    HUKU_NFT: '0x703CEB677e9fbB1f4c6E917195c3b63B7EFA4Fe8',
 } as const
 
 /**

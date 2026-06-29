@@ -898,7 +898,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                                                     const currentAllowance = await refetchAllowance()
                                                     const currentAllowanceValue = currentAllowance.data
                                                     
-                                                    if (!mintPrice || !currentAllowanceValue) {
+                                                    if (mintPrice === undefined || mintPrice === null || currentAllowanceValue === undefined || currentAllowanceValue === null) {
                                                         alert('Unable to get authorization info, please refresh page and retry')
                                                         return
                                                     }
@@ -1098,8 +1098,13 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                                                     {/* Mint button */}
                                                     <button
                                                         onClick={async () => {
-                                                            if (!address || !mintPrice || !tokenBDecimals) {
+                                                            if (!address) {
                                                                 alert('Please connect wallet first')
+                                                                return
+                                                            }
+
+                                                            if (mintPrice === undefined || mintPrice === null || tokenBDecimals === undefined || tokenBDecimals === null) {
+                                                                alert('Unable to load mint contract data, please refresh page and retry')
                                                                 return
                                                             }
                                                             
@@ -1107,7 +1112,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                                                             
                                                             try {
                                                                 // ✅ Precise to single NFT: only approve current NFT's mintPrice (each mint approves separatelyprove）
-                                                                if (!mintPrice) {
+                                                                if (mintPrice === undefined || mintPrice === null) {
                                                                     alert('Unable to get mintPrice, please refresh page and retry')
                                                                     setApprovingNftId(null)
                                                                     return
