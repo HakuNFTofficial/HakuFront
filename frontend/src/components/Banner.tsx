@@ -3,6 +3,7 @@ import { useWebSocket } from '../hooks/useWebSocket'
 
 interface MintedNFT {
  nft_id: number
+ file_name?: string | null
  token_id: string | null
  token_url: string | null
     image_url?: string | null  
@@ -14,12 +15,13 @@ interface LatestMintedNFTsEvent {
 }
 
 
-import { IPFS_CONFIG, convertIPFSToHttp } from '../config/ipfs'
+import { IPFS_CONFIG, convertIPFSToHttp, getIPFSImageUrl } from '../config/ipfs'
 
 
 const IPFS_GATEWAY = IPFS_CONFIG.GATEWAY
 const IPFS_IMAGE_CID = IPFS_CONFIG.IMAGE_CID
 const IPFS_JSON_CID = IPFS_CONFIG.METADATA_CID
+const NFT_PLACEHOLDER_IMAGE = 'data:image/svg+xml,%3Csvg%20width%3D%2240%22%20height%3D%2240%22%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%3E%3Crect%20width%3D%2240%22%20height%3D%2240%22%20fill%3D%22%23374151%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2250%25%22%20font-size%3D%2212%22%20font-family%3D%22Arial%22%20fill%3D%22%239CA3AF%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%3ENFT%3C/text%3E%3C/svg%3E'
 
 
 function formatTokenId(tokenId: string | null): string {
@@ -28,7 +30,8 @@ function formatTokenId(tokenId: string | null): string {
 }
 
 
-function processImageUrl(imageUrl: string | null | undefined): string | undefined {
+function processImageUrl(imageUrl: string | null | undefined, fileName?: string | null): string | undefined {
+ if (!imageUrl && fileName) return getIPFSImageUrl(fileName)
  if (!imageUrl) return undefined
 
     
@@ -70,7 +73,7 @@ export function Banner() {
                
  const processedNfts = event.nfts.map(nft => ({
 ...nft,
- image_url: processImageUrl(nft.image_url)
+ image_url: processImageUrl(nft.image_url, nft.file_name)
  }))
 
                
@@ -119,7 +122,7 @@ export function Banner() {
                     // Process image URLs
  const processedNfts = nfts.map(nft => ({
 ...nft,
- image_url: processImageUrl(nft.image_url)
+ image_url: processImageUrl(nft.image_url, nft.file_name)
  }))
 
                     // ✨ On initial load, if there are NFTs, show spring effect on the first one
@@ -183,7 +186,7 @@ export function Banner() {
                             } : {}}
  >
                             <img
-                                src={nft.image_url || 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMzc0MTUxIi8+PHRleHQgeD0iNTA%2BIHk9IjUwJSIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5GVDwvdGV4dD48L3N2Zz4='}
+                                src={nft.image_url || NFT_PLACEHOLDER_IMAGE}
  alt={`NFT ${formatTokenId(nft.token_id)}`}
                                 className="w-10 h-10 rounded-md object-cover bg-gray-700 flex-shrink-0"
  loading="lazy"
@@ -194,8 +197,8 @@ export function Banner() {
                                         console.warn('[Banner] Image load failed for NFT:', nft.nft_id)
                                     }
                                     // Avoid infinite loop: only replace if not already a placeholder
- if (!target.src.includes('data:image/svg+xml')) {
-                                        target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjQwIiBoZWlnaHQ9IjQwIiBmaWxsPSIjMzc0MTUxIi8+PHRleHQgeD0iNTA%2BIHk9IjUwJSIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzlDQTNBRiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5GVDwvdGV4dD48L3N2Zz4='
+                                    if (!target.src.includes('data:image/svg+xml')) {
+                                        target.src = NFT_PLACEHOLDER_IMAGE
  }
  }}
  />
