@@ -60,6 +60,12 @@ contract HukuNFT is
     /// @notice Emitted when mint price is updated
     event MintPriceUpdated(uint256 newPrice);
 
+    /// @notice Emitted when a token-specific refund amount is updated
+    event TokenRefundAmountUpdated(
+        uint256 indexed tokenId,
+        uint256 refundAmount
+    );
+
     /// @notice Emitted when a token is burned and HakuToken is refunded
     /// @dev This event is emitted when both NFT burn and ERC20 refund succeed together (atomic operation)
     /// @param tokenId The token ID that was burned
@@ -100,9 +106,10 @@ contract HukuNFT is
     // HakuToken payment configuration
     IERC20 public hakuToken; // HakuToken 地址
     uint256 public mintPrice; // 每个 NFT 的价格（以 HakuToken 计价，单位：wei）
+    mapping(uint256 => uint256) public tokenRefundAmount; // 每个 token 实际可退款金额
 
     /// @dev Reserve storage gap for future upgrades
-    uint256[48] private __gap; // 减少 2 个 slot，为 hakuToken 和 mintPrice 留出空间
+    uint256[47] private __gap; // 减少 1 个 slot，为 tokenRefundAmount 留出空间
 
     constructor() {
         _disableInitializers();
@@ -205,6 +212,8 @@ contract HukuNFT is
                 "HakuToken transfer failed"
             );
 
+            tokenRefundAmount[tokenId] = mintPrice;
+
             // 发出包含备注的转账事件（与 Transfer 事件在同一个交易中
             // 链下服务可以通过交易哈希关联这两个事件
             string memory mintRemark = string(
@@ -284,6 +293,38 @@ contract HukuNFT is
         );
         mintPrice = _mintPrice;
         emit MintPriceUpdated(_mintPrice);
+    }
+
+    /// @notice Owner can set the refund amount for an already minted token
+    /// @dev Used to migrate legacy tokens minted before token-specific refund tracking
+    function setTokenRefundAmount(
+        uint256 tokenId,
+        uint256 refundAmount
+    ) external onlyOwner {
+        ownerOf(tokenId);
+        tokenRefundAmount[tokenId] = refundAmount;
+        emit TokenRefundAmountUpdated(tokenId, refundAmount);
+    }
+
+    /// @notice Owner can batch set refund amounts for already minted tokens
+    /// @dev Used to migrate legacy tokens minted before token-specific refund tracking
+    function setTokenRefundAmounts(
+        uint256[] calldata tokenIds,
+        uint256[] calldata refundAmounts
+    ) external onlyOwner {
+        require(tokenIds.length == refundAmounts.length, "Length mismatch");
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            ownerOf(tokenIds[i]);
+            tokenRefundAmount[tokenIds[i]] = refundAmounts[i];
+            emit TokenRefundAmountUpdated(tokenIds[i], refundAmounts[i]);
+        }
+    }
+
+    /// @notice Returns the effective refund amount for a token
+    /// @dev Falls back to current mintPrice only for unmigrated legacy tokens
+    function getTokenRefundAmount(uint256 tokenId) public view returns (uint256) {
+        uint256 refundAmount = tokenRefundAmount[tokenId];
+        return refundAmount > 0 ? refundAmount : mintPrice;
     }
 
     /// @notice Owner can withdraw HakuToken from contract
@@ -366,25 +407,25 @@ contract HukuNFT is
                 delete tokenIdToOfflineId[tokenId];
             }
 
-            // ✅ 自动退款：如果 mintPrice > 0 且 mintUser 存在，则退款
+            // ✅ 自动退款：如果 refundAmount > 0 且 mintUser 存在，则退款
             // 设计原则：NFT burn 和 ERC20 退款必须一起成功或一起失败（原子操作）
-            uint256 refundAmount = 0;
-            if (mintPrice > 0 && mintUserAddress != address(0)) {
+            uint256 refundAmount = getTokenRefundAmount(tokenId);
+            if (refundAmount > 0 && mintUserAddress != address(0)) {
                 // 检查合约余额是否足够
                 uint256 contractBalance = hakuToken.balanceOf(address(this));
                 require(
-                    contractBalance >= mintPrice,
+                    contractBalance >= refundAmount,
                     "Insufficient contract balance for refund"
                 );
 
                 // 执行退款转账（如果失败会 revert，确保原子性）
                 require(
-                    hakuToken.transfer(mintUserAddress, mintPrice),
+                    hakuToken.transfer(mintUserAddress, refundAmount),
                     "HakuToken refund transfer failed"
                 );
-
-                refundAmount = mintPrice;
             }
+
+            delete tokenRefundAmount[tokenId];
 
             // ✅ 发出合并的事件（包含退款信息）
             emit TokenBurned(
