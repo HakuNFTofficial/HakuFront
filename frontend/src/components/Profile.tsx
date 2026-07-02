@@ -45,17 +45,13 @@ export function Profile() {
         const fetchNFTs = async () => {
             setIsLoading(true)
             try {
-                const url = `/api/user-nft-list?user_address=${address}&page=${page}&page_size=20`
+                const url = `/api/user-nft-list?user_address=${address}&page=${page}&page_size=20&include_chips=false`
                 console.log('[Profile] Fetching NFTs:', url)
                 
                 const response = await fetch(url)
                 if (response.ok) {
                     const data = await response.json()
                     console.log('[Profile] NFT data received:', data)
-                    
-                    // Note: Backend should return owned_chips array for each NFT
-                    // Example: { nft_id: 258, owned_chips: [1, 5, 10, 23, ...], total_chips_count: 100 }
-                    // If owned_chips is not provided, the component will show grayscale only
                     
                     setNftData(data)
                 } else {

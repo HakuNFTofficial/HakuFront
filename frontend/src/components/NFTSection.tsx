@@ -264,7 +264,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
 
             try {
                     // Use deprecated endpoint to get initial data (only for first load after WebSocket connection)
-                const apiUrl = `/api/query-mint?user_address=${address}`
+                const apiUrl = `/api/query-mint?user_address=${address}&include_chips=false`
                     console.log('[NFTSection] Fetching initial NFTs after WebSocket connected:', apiUrl)
                 
                 const response = await fetch(apiUrl)
@@ -409,7 +409,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             // Refresh NFT list - continuous polling until backend status updates to is_mint === 2
             const fetchNFTs = async () => {
                 try {
-                    const apiUrl = `/api/query-mint?user_address=${address}`
+                    const apiUrl = `/api/query-mint?user_address=${address}&include_chips=false`
                     const res = await fetch(apiUrl)
                     if (res.ok) {
                         const result = await res.json()
@@ -502,7 +502,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             // Refresh NFT list
             const fetchNFTs = async () => {
                 try {
-                    const apiUrl = `/api/query-mint?user_address=${address}`
+                    const apiUrl = `/api/query-mint?user_address=${address}&include_chips=false`
                     const res = await fetch(apiUrl)
                     if (res.ok) {
                         const result = await res.json()
