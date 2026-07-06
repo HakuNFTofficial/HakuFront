@@ -496,14 +496,17 @@ export function Swap() {
     useEffect(() => {
         if (writeError) {
             console.error('[Swap] ❌ Swap transaction error:', writeError)
+
+            if (writeError.message && isUserRejectedTransaction(writeError.message)) {
+                console.info('[Swap] Transaction cancelled by wallet; no alert shown.')
+                return
+            }
             
             let errorMessage = 'Transaction failed: '
             
             // Try to parse error message
             if (writeError.message) {
-                if (isUserRejectedTransaction(writeError.message)) {
-                    errorMessage = `Transaction cancelled by wallet.\n\nOn Arc Testnet, the native payment token is ${tokenASymbol}. The EVM transaction "value" field represents native ${tokenASymbol}, even if a wallet or library formats it as ETH in raw request details.`
-                } else if (writeError.message.includes('estimateGas') || writeError.message.includes('execution reverted')) {
+                if (writeError.message.includes('estimateGas') || writeError.message.includes('execution reverted')) {
                     // Try to decode error message from error data
                     const errorData = (writeError as any).data
                     if (errorData) {
