@@ -51,6 +51,9 @@ const formatAmount = (amount: string, decimals: number = 18) => {
     }
 }
 
+const formatAddress = (address: string) =>
+    address.length > 10 ? `${address.slice(0, 6)}...${address.slice(-4)}` : address
+
 export function SwapHistory({ data }: { data: SwapHistoryData }) {
     return (
         <div className="w-full max-w-2xl mx-auto font-sans space-y-3">
@@ -99,6 +102,9 @@ export function SwapHistory({ data }: { data: SwapHistoryData }) {
                                     </span>
                                     <span className="text-gray-500 text-[10px] font-mono">
                                         {new Date(record.timestamp_utc).toLocaleString()}
+                                    </span>
+                                    <span className="text-gray-600 text-[10px] font-mono">
+                                        {formatAddress(record.user_address)}
                                     </span>
                                 </div>
                                 <span className="text-gray-600 text-[10px] font-mono">#{record.id}</span>

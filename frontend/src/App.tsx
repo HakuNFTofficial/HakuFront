@@ -169,7 +169,7 @@ function App() {
                 setIsLoadingTransaction(true)
                 setTransactionError(null)
                 try {
-                    const response = await fetch(`/api/user-swaps?user_address=${address}`)
+                    const response = await fetch('/api/swaps?limit=100')
                     if (!response.ok) {
                         throw new Error('Failed to fetch transaction')
                     }
