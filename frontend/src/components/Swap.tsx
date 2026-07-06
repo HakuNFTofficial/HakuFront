@@ -588,8 +588,8 @@ export function Swap() {
                             // Buy mode: show USDC balance
                             <>
                                 <div className="flex items-center gap-2">
-                                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-                                        USDC
+                                    <div className="w-6 h-6 rounded-full bg-[#2775CA] border border-white/70 flex items-center justify-center text-white font-bold text-sm leading-none flex-shrink-0">
+                                        $
                                     </div>
                                     <div className="text-white text-sm font-medium">USDC</div>
                                 </div>
