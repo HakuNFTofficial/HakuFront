@@ -70,7 +70,7 @@ contract HukuNFT is
     /// @dev This event is emitted when both NFT burn and ERC20 refund succeed together (atomic operation)
     /// @param tokenId The token ID that was burned
     /// @param owner The owner address who burned the token
-    /// @param refundTo The address that received the HakuToken refund (same as mintUser)
+    /// @param refundTo The address that received the HakuToken refund (owner at burn time)
     /// @param refundAmount The amount of HakuToken refunded (0 if mintPrice was 0 or no refund occurred)
     event TokenBurned(
         uint256 indexed tokenId,
@@ -361,7 +361,7 @@ contract HukuNFT is
     /// @notice Override _update to clean up custom storage and refund HakuToken when token is burned
     /// @dev When token is burned (to == address(0)), we need to:
     ///      - Clean up custom storage (Token URI, mintUser, offline ID mappings)
-    ///      - Automatically refund HakuToken to mintUser (if mintPrice > 0)
+    ///      - Automatically refund HakuToken to the owner at burn time (if mintPrice > 0)
     /// @dev When token is transferred (to != address(0) and previousOwner != address(0)), emit NFT721TokenTransferred event
     /// @param to The address to transfer the token to (address(0) for burn)
     /// @param tokenId The token ID
@@ -387,8 +387,7 @@ contract HukuNFT is
 
         // If token is being burned (to == address(0)), clean up custom storage and refund
         if (to == address(0)) {
-            // ✅ 在删除 mintUser 之前，先保存用户地址用于退款
-            address mintUserAddress = mintUser[tokenId];
+            address refundTo = previousOwner;
 
             // Clean up token URI storage
             // Note: ERC721URIStorageUpgradeable doesn't automatically clean up _tokenURIs
@@ -407,10 +406,10 @@ contract HukuNFT is
                 delete tokenIdToOfflineId[tokenId];
             }
 
-            // ✅ 自动退款：如果 refundAmount > 0 且 mintUser 存在，则退款
+            // ✅ 自动退款：如果 refundAmount > 0 且 burn 前 owner 存在，则退款
             // 设计原则：NFT burn 和 ERC20 退款必须一起成功或一起失败（原子操作）
             uint256 refundAmount = getTokenRefundAmount(tokenId);
-            if (refundAmount > 0 && mintUserAddress != address(0)) {
+            if (refundAmount > 0 && refundTo != address(0)) {
                 // 检查合约余额是否足够
                 uint256 contractBalance = hakuToken.balanceOf(address(this));
                 require(
@@ -420,7 +419,7 @@ contract HukuNFT is
 
                 // 执行退款转账（如果失败会 revert，确保原子性）
                 require(
-                    hakuToken.transfer(mintUserAddress, refundAmount),
+                    hakuToken.transfer(refundTo, refundAmount),
                     "HakuToken refund transfer failed"
                 );
             }
@@ -431,7 +430,7 @@ contract HukuNFT is
             emit TokenBurned(
                 tokenId,
                 previousOwner,
-                mintUserAddress,
+                refundTo,
                 refundAmount
             );
         }
