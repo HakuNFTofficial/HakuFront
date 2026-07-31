@@ -2,7 +2,7 @@
 pragma solidity ^0.8.26;
 import {
     Initializable
-} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+} from "openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
 import {
     UUPSUpgradeable
 } from "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
@@ -199,7 +199,10 @@ contract HukuNFT is
         uint256 tokenURL
     ) external returns (uint256) {
         require(bytes(remark).length > 0, "Remark cannot be empty");
-        //require(offlineIdToTokenId[remark] == 0, "Offline ID already used");
+        require(
+            offlineIdToTokenId[remark] == 0,
+            "Offline ID already used"
+        );
 
         // 1. 扣除 HakuToken 并转到合约本身（如果 mintPrice > 0）
         uint256 tokenId = 0; // 提前声明，用于事件
