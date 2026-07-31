@@ -2,6 +2,8 @@ import { http, createConfig } from 'wagmi'
 import { injected } from 'wagmi/connectors'
 import { defineChain } from 'viem'
 
+export const RPC_PROXY_URL = '/api/rpc'
+
 // Define Arc testnet
 export const arcTestnet = defineChain({
     id: 5042002,
@@ -32,6 +34,13 @@ export const config = createConfig({
         }),
     ],
     transports: {
-        [arcTestnet.id]: http('https://rpc.testnet.arc.network'),
+        [arcTestnet.id]: http(RPC_PROXY_URL, {
+            batch: {
+                batchSize: 20,
+                wait: 50,
+            },
+            retryCount: 2,
+            retryDelay: 500,
+        }),
     },
 })

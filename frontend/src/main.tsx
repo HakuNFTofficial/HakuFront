@@ -12,7 +12,15 @@ if (import.meta.env?.DEV || import.meta.env?.MODE === 'development') {
     logVersionInfo()
 }
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            staleTime: 10_000,
+            refetchOnWindowFocus: false,
+            retry: 2,
+        },
+    },
+})
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
