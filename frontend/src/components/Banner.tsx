@@ -1,5 +1,5 @@
-import { useEffect, useState, useRef } from 'react'
-import { useWebSocketEvent } from '../providers/WebSocketProvider'
+import { useCallback, useEffect, useState, useRef } from 'react'
+import { useWebSocketEvent, useWebSocketReconnect } from '../providers/WebSocketProvider'
 
 interface MintedNFT {
  nft_id: number
@@ -86,49 +86,36 @@ export function Banner() {
  setIsLoading(false)
     })
 
-    // Load initial data independently so WebSocket outages do not leave the banner waiting forever.
- useEffect(() => {
+    const fetchLatestNFTs = useCallback(async () => {
+        setIsLoading(true)
+        try {
+            const response = await fetch('/api/query-minted-nfts-for-limit')
+            if (!response.ok) {
+                throw new Error(`Failed to fetch minted NFTs: ${response.status}`)
+            }
+            const data: LatestMintedNFTsEvent = await response.json()
+            const processedNfts = (data.nfts || []).map(nft => ({
+                ...nft,
+                image_url: processImageUrl(nft.image_url, nft.file_name)
+            }))
+
+            setMintedNFTs(processedNfts)
+        } catch (err) {
+            console.error('[Banner] Failed to fetch initial NFTs:', err)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [])
+
+    // Load independently so WebSocket outages do not leave the banner waiting forever.
+    useEffect(() => {
         if (hasRequestedInitialDataRef.current) return
         hasRequestedInitialDataRef.current = true
+        fetchLatestNFTs()
+    }, [fetchLatestNFTs])
 
-            const fetchInitialNFTs = async () => {
- setIsLoading(true)
- try {
- const response = await fetch('/api/query-minted-nfts-for-limit')
- if (!response.ok) {
-                        throw new Error(`Failed to fetch minted NFTs: ${response.status}`)
- }
-                    const data: LatestMintedNFTsEvent = await response.json()
- const nfts = data.nfts || []
-
-                    // Process image URLs
- const processedNfts = nfts.map(nft => ({
-...nft,
- image_url: processImageUrl(nft.image_url, nft.file_name)
- }))
-
-                    // ✨ On initial load, if there are NFTs, show spring effect on the first one
- if (processedNfts.length > 0) {
- const firstNftId = processedNfts[0].nft_id
-                        console.log('[Banner] ✨ Initial load: Triggering spring animation for first NFT:', firstNftId)
-                        setNewNFTId(firstNftId)
-                        // Clear animation effect after 5.5 seconds (animation duration: 2.5s * 2 times + buffer)
-                        setTimeout(() => {
-                            setNewNFTId(null)
-                        }, 5500)  // 2.5s * 2 times + 0.5s buffer = 5.5s
- }
-
-                    setMintedNFTs(processedNfts)
- } catch (err) {
-                    console.error('[Banner] Failed to fetch initial NFTs:', err)
-                    setMintedNFTs([])
- } finally {
- setIsLoading(false)
- }
- }
-
- fetchInitialNFTs()
-    }, [])
+    // Events are not replayed, so repair any gap after a reconnect.
+    useWebSocketReconnect(fetchLatestNFTs)
 
     // If no data, don't display banner
     if (!isLoading && mintedNFTs.length === 0) {

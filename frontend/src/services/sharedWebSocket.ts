@@ -21,6 +21,8 @@ export interface WebSocketManagerOptions {
     random?: () => number
     setTimeoutFn?: (callback: () => void, delay: number) => TimerHandle
     clearTimeoutFn?: (timer: TimerHandle) => void
+    isVisible?: () => boolean
+    subscribeVisibility?: (listener: () => void) => () => void
 }
 
 const defaultOptions: Required<WebSocketManagerOptions> = {
@@ -30,6 +32,12 @@ const defaultOptions: Required<WebSocketManagerOptions> = {
     random: Math.random,
     setTimeoutFn: (callback, delay) => setTimeout(callback, delay),
     clearTimeoutFn: (timer) => clearTimeout(timer),
+    isVisible: () => typeof document === 'undefined' || document.visibilityState === 'visible',
+    subscribeVisibility: (listener) => {
+        if (typeof document === 'undefined') return () => undefined
+        document.addEventListener('visibilitychange', listener)
+        return () => document.removeEventListener('visibilitychange', listener)
+    },
 }
 
 export class SharedWebSocketManager {
@@ -42,6 +50,7 @@ export class SharedWebSocketManager {
     private generation = 0
     private running = false
     private status: WebSocketStatus = 'disconnected'
+    private removeVisibilityListener: (() => void) | null = null
 
     constructor(
         private readonly url: string,
@@ -75,7 +84,10 @@ export class SharedWebSocketManager {
         if (this.running) return
         this.running = true
         this.retryAttempt = 0
-        this.connect()
+        this.removeVisibilityListener = this.options.subscribeVisibility(this.onVisibilityChange)
+        if (this.options.isVisible()) {
+            this.connect()
+        }
     }
 
     stop() {
@@ -84,6 +96,8 @@ export class SharedWebSocketManager {
         this.generation += 1
         this.clearRetryTimer()
         this.disposeSocket()
+        this.removeVisibilityListener?.()
+        this.removeVisibilityListener = null
         this.retryAttempt = 0
         this.setStatus('disconnected')
     }
@@ -97,7 +111,11 @@ export class SharedWebSocketManager {
         this.generation += 1
         this.clearRetryTimer()
         this.disposeSocket()
-        this.connect()
+        if (this.options.isVisible()) {
+            this.connect()
+        } else {
+            this.setStatus('disconnected')
+        }
     }
 
     send(data: unknown) {
@@ -107,7 +125,7 @@ export class SharedWebSocketManager {
     }
 
     private connect() {
-        if (!this.running) return
+        if (!this.running || !this.options.isVisible()) return
 
         this.clearRetryTimer()
         const generation = ++this.generation
@@ -159,7 +177,12 @@ export class SharedWebSocketManager {
     }
 
     private scheduleReconnect(generation: number) {
-        if (!this.running || generation !== this.generation || this.retryTimer) return
+        if (
+            !this.running
+            || generation !== this.generation
+            || this.retryTimer
+            || !this.options.isVisible()
+        ) return
 
         const exponentialDelay = Math.min(
             this.options.reconnectBaseMs * 2 ** Math.min(this.retryAttempt, 10),
@@ -172,9 +195,24 @@ export class SharedWebSocketManager {
         this.retryAttempt += 1
         this.retryTimer = this.options.setTimeoutFn(() => {
             this.retryTimer = null
-            if (!this.running || generation !== this.generation) return
+            if (
+                !this.running
+                || generation !== this.generation
+                || !this.options.isVisible()
+            ) return
             this.connect()
         }, jitteredDelay)
+    }
+
+    private onVisibilityChange = () => {
+        if (
+            this.running
+            && this.options.isVisible()
+            && !this.socket
+            && !this.retryTimer
+        ) {
+            this.connect()
+        }
     }
 
     private clearRetryTimer() {

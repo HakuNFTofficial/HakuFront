@@ -121,4 +121,38 @@ describe('SharedWebSocketManager', () => {
 
         expect(sockets).toHaveLength(2)
     })
+
+    it('waits for a hidden page to become visible before reconnecting', () => {
+        const sockets: FakeSocket[] = []
+        let visible = true
+        let visibilityListener: (() => void) | undefined
+        const manager = new SharedWebSocketManager('wss://example.test/ws', {
+            socketFactory: () => {
+                const socket = new FakeSocket()
+                sockets.push(socket)
+                return socket
+            },
+            reconnectBaseMs: 1_000,
+            random: () => 0,
+            isVisible: () => visible,
+            subscribeVisibility: (listener) => {
+                visibilityListener = listener
+                return () => {
+                    visibilityListener = undefined
+                }
+            },
+        })
+
+        manager.start()
+        sockets[0].emitOpen()
+        visible = false
+        sockets[0].emitClose()
+        vi.runAllTimers()
+
+        expect(sockets).toHaveLength(1)
+
+        visible = true
+        visibilityListener?.()
+        expect(sockets).toHaveLength(2)
+    })
 })

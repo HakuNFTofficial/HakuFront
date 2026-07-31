@@ -39,8 +39,9 @@ export const config = createConfig({
                 batchSize: 20,
                 wait: 50,
             },
-            retryCount: 2,
-            retryDelay: 500,
+            // The backend gateway owns bounded retry/backoff so failures are not multiplied.
+            retryCount: 0,
+            timeout: 40_000,
         }),
     },
 })

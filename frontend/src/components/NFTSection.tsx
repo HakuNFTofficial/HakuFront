@@ -1,10 +1,10 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
 import { formatUnits } from 'viem'
 import { NFTImageReveal } from './NFTImageReveal'
 import { CONTRACTS, HUKU_NFT_ABI, ERC20_ABI } from '../config/contracts'
 import { useEventAssociation } from '../hooks/useEventAssociation'
-import { useWebSocketEvent } from '../providers/WebSocketProvider'
+import { useWebSocketEvent, useWebSocketReconnect } from '../providers/WebSocketProvider'
 import { BALANCE_REFETCH_MS, STATIC_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
 
 interface NFT {
@@ -210,21 +210,9 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
         setIsLoading(false)
     }, Boolean(address))
 
-    // Fetch the initial snapshot independently of WebSocket availability.
-    useEffect(() => {
-        if (!address) {
-            setNfts([])
-            setIsLoading(false)
-            initialDataAddressRef.current = null
-            return
-        }
+    const fetchNFTSnapshot = useCallback(async () => {
+        if (!address) return
 
-        if (initialDataAddressRef.current === address) {
-            return
-        }
-        initialDataAddressRef.current = address
-
-        const fetchInitialNFTs = async () => {
             setIsLoading(true)
             setError(null)
 
@@ -260,10 +248,27 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             } finally {
                 setIsLoading(false)
             }
+    }, [address])
+
+    // Fetch the initial snapshot independently of WebSocket availability.
+    useEffect(() => {
+        if (!address) {
+            setNfts([])
+            setIsLoading(false)
+            initialDataAddressRef.current = null
+            return
         }
 
-        fetchInitialNFTs()
-    }, [address])
+        if (initialDataAddressRef.current === address) {
+            return
+        }
+        initialDataAddressRef.current = address
+
+        fetchNFTSnapshot()
+    }, [address, fetchNFTSnapshot])
+
+    // Events are not replayed, so repair any gap after a reconnect.
+    useWebSocketReconnect(fetchNFTSnapshot)
 
     // Listen for transaction hash - get hash after wallet popup and user confirmation
     useEffect(() => {

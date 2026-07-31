@@ -18,9 +18,9 @@ describe('queryPolicy', () => {
         expect(STATIC_REFETCH_MS).toBe(30_000)
     })
 
-    it('pauses polling while the document is hidden', () => {
+    it('keeps the interval scheduled so React Query can resume after the page is visible', () => {
         vi.stubGlobal('document', { visibilityState: 'hidden' })
-        expect(visibleRefetchInterval(15_000)()).toBe(false)
+        expect(visibleRefetchInterval(15_000)()).toBe(15_000)
     })
 
     it('returns the configured interval while visible', () => {

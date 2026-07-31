@@ -1,5 +1,5 @@
-import { useState, useMemo, useEffect } from 'react'
-import { useFeeData, useAccount, useWriteContract, useReadContract, useBalance } from 'wagmi'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { useFeeData, useAccount, useWriteContract, useReadContract, useBalance, useWaitForTransactionReceipt } from 'wagmi'
 import { parseUnits, formatUnits, keccak256, encodeAbiParameters, encodePacked, formatEther } from 'viem'
 import { CONTRACTS, POOL_CONFIG, SWAP_CONFIG, SWAP_EXECUTOR_ABI, ERC20_ABI, POOL_MANAGER_ABI, QUOTER_ABI } from '../config/contracts'
 import { useWalletChainId } from '../hooks/useWalletChainId'
@@ -35,7 +35,7 @@ export function Swap() {
     })
 
     // Query USDC balance (native token)
-    const { data: sttBalance, isLoading: isLoadingSTT } = useBalance({
+    const { data: sttBalance, isLoading: isLoadingSTT, refetch: refetchSttBalance } = useBalance({
         address: address,
         query: {
             enabled: !!address,
@@ -45,7 +45,7 @@ export function Swap() {
     })
 
     // Query Haku balance (ERC20)
-    const { data: hakuBalance, isLoading: isLoadingHaku } = useReadContract({
+    const { data: hakuBalance, isLoading: isLoadingHaku, refetch: refetchHakuBalance } = useReadContract({
         address: CONTRACTS.TOKEN_B,
         abi: ERC20_ABI,
         functionName: 'balanceOf',
@@ -128,7 +128,7 @@ export function Swap() {
         return `0x${(BigInt(poolSlot) + LIQUIDITY_OFFSET).toString(16).padStart(64, '0')}` as `0x${string}`
     }, [poolSlot])
 
-    const { data: slot0Bytes, isLoading: isLoadingPool, error: poolError } = useReadContract({
+    const { data: slot0Bytes, isLoading: isLoadingPool, error: poolError, refetch: refetchPoolState } = useReadContract({
         address: CONTRACTS.POOL_MANAGER,
         abi: POOL_MANAGER_ABI,
         functionName: 'extsload',
@@ -141,7 +141,7 @@ export function Swap() {
     })
 
     // Query pool liquidity
-    const { data: liquidityBytes } = useReadContract({
+    const { data: liquidityBytes, refetch: refetchPoolLiquidity } = useReadContract({
         address: CONTRACTS.POOL_MANAGER,
         abi: POOL_MANAGER_ABI,
         functionName: 'extsload',
@@ -312,7 +312,7 @@ export function Swap() {
     }, [amount, poolSlot0, mode, tokenADecimals, tokenBDecimals])
 
    
-    const { data: quoteResult, isLoading: isQuoting, error: quoteError } = useReadContract({
+    const { data: quoteResult, isLoading: isQuoting, error: quoteError, refetch: refetchQuote } = useReadContract({
         address: CONTRACTS.QUOTER,
         abi: QUOTER_ABI,
         functionName: 'quoteExactInputSingle',
@@ -369,7 +369,36 @@ export function Swap() {
         }
     }, [quoteResult, currentPrice, amount, mode, poolSlot0, tokenADecimals, tokenBDecimals])
 
-    const { writeContract, error: writeError } = useWriteContract()
+    const { writeContract, data: transactionHash, error: writeError } = useWriteContract()
+    const { isSuccess: isTransactionConfirmed } = useWaitForTransactionReceipt({
+        hash: transactionHash,
+    })
+    const refreshedTransactionHashRef = useRef<string | undefined>(undefined)
+
+    useEffect(() => {
+        if (
+            !isTransactionConfirmed
+            || !transactionHash
+            || refreshedTransactionHashRef.current === transactionHash
+        ) return
+
+        refreshedTransactionHashRef.current = transactionHash
+        void Promise.all([
+            refetchSttBalance(),
+            refetchHakuBalance(),
+            refetchPoolState(),
+            refetchPoolLiquidity(),
+            refetchQuote(),
+        ])
+    }, [
+        isTransactionConfirmed,
+        transactionHash,
+        refetchSttBalance,
+        refetchHakuBalance,
+        refetchPoolState,
+        refetchPoolLiquidity,
+        refetchQuote,
+    ])
 
  
     const outputDecimals = mode === 'buy' ? (tokenBDecimals ?? 18) : tokenADecimals

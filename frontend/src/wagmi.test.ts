@@ -8,6 +8,8 @@ describe('wagmi transport', () => {
 
         expect(source).toContain("export const RPC_PROXY_URL = '/api/rpc'")
         expect(source).toContain('http(RPC_PROXY_URL')
+        expect(source).toContain('retryCount: 0')
+        expect(source).toContain('timeout: 40_000')
         expect(source).not.toContain("http('https://rpc.testnet.arc.network')")
     })
 })

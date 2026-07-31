@@ -13,6 +13,7 @@ describe('realtime components', () => {
         const source = readFileSync(new URL(componentPath, import.meta.url), 'utf8')
 
         expect(source).toContain('useWebSocketEvent')
+        expect(source).toContain('useWebSocketReconnect')
         expect(source).not.toContain("from '../hooks/useWebSocket'")
         expect(source).not.toContain('/ws`')
     })

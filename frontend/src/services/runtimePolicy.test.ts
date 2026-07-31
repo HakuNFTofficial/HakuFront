@@ -5,6 +5,13 @@ import { describe, expect, it } from 'vitest'
 const readSource = (path: string) => readFileSync(new URL(path, import.meta.url), 'utf8')
 
 describe('runtime request policy', () => {
+    it('leaves RPC retries to the bounded backend gateway', () => {
+        const source = readSource('../main.tsx')
+
+        expect(source).toContain('retry: false')
+        expect(source).not.toMatch(/retry:\s*2/)
+    })
+
     it.each([
         '../components/WalletBalance.tsx',
         '../components/Swap.tsx',
