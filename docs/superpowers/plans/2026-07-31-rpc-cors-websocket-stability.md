@@ -560,4 +560,3 @@ Run an authorized low-value test flow: read balance/quote, mint an eligible test
 - [ ] **Step 6: Roll back on any failed acceptance criterion**
 
 Restore backend binary/service first and frontend `dist` second from the timestamped backups. Do not roll back contracts or modify database rows.
-
