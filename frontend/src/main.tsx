@@ -6,6 +6,7 @@ import { config } from './wagmi'
 import App from './App'
 import './index.css'
 import { logVersionInfo } from './utils/version'
+import { WebSocketProvider } from './providers/WebSocketProvider'
 
 // Display version information in development environment or when debugging is needed
 if (import.meta.env?.DEV || import.meta.env?.MODE === 'development') {
@@ -26,7 +27,9 @@ createRoot(document.getElementById('root')!).render(
     <StrictMode>
         <WagmiProvider config={config}>
             <QueryClientProvider client={queryClient}>
-                <App />
+                <WebSocketProvider>
+                    <App />
+                </WebSocketProvider>
             </QueryClientProvider>
         </WagmiProvider>
     </StrictMode>,
