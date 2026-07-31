@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createChart, IChartApi, CandlestickData, UTCTimestamp, CandlestickSeries, HistogramSeries } from 'lightweight-charts'
-import { useWebSocket } from '../hooks/useWebSocket'
+import { useWebSocketEvent, useWebSocketStatus } from '../providers/WebSocketProvider'
 import { TRADING_PAIR_CONFIG } from '../config/contracts'
 
 interface KlineUpdateEvent {
@@ -102,33 +102,14 @@ export function KLineChart() {
         fetchHistoricalData()
     }, [interval, chartInitialized])
 
-    // WebSocket for real-time updates
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsHost = window.location.host 
-    const { status: wsStatus } = useWebSocket({
-        url: `${wsProtocol}//${wsHost}/ws`, 
-        enabled: !isLoading && !error,
-        onMessage: (message: any) => {
+    const wsStatus = useWebSocketStatus()
+    useWebSocketEvent<KlineUpdateEvent | KlineUpdateEvent[]>('KlineUpdate', (data) => {
             if (!candlestickSeriesRef.current || !volumeSeriesRef.current) {
                 console.warn('Chart series not initialized, skipping update')
                 return
             }
 
-            console.log('WS Message received:', message)
-
-            let dataToProcess = message
-
-            // Handle wrapped messages (e.g. { type: 'KlineUpdate', data: ... })
-            if (message.type) {
-                if (message.type === 'KlineUpdate' && message.data) {
-                    dataToProcess = message.data
-                } else {
-                    // Ignore other message types (like 'Swap')
-                    return
-                }
-            }
-
-            const events = Array.isArray(dataToProcess) ? dataToProcess : [dataToProcess]
+            const events = Array.isArray(data) ? data : [data]
 
             events.forEach((event: KlineUpdateEvent) => {
                 // Only update if it's the current interval
@@ -164,8 +145,7 @@ export function KLineChart() {
                     console.error('Error updating chart series:', err)
                 }
             })
-        }
-    })
+    }, !isLoading && !error)
 
     // Initialize chart
     useEffect(() => {

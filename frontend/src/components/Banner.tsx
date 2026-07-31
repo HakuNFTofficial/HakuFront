@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useWebSocket } from '../hooks/useWebSocket'
+import { useWebSocketEvent } from '../providers/WebSocketProvider'
 
 interface MintedNFT {
  nft_id: number
@@ -58,17 +58,9 @@ export function Banner() {
     const [newNFTId, setNewNFTId] = useState<number | null>(null) 
     const hasRequestedInitialDataRef = useRef<boolean>(false) 
 
-   
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsHost = window.location.host
-    const { status: wsStatus } = useWebSocket({
-        url: `${wsProtocol}//${wsHost}/ws`,
- enabled: true,
- onMessage: (message: any) => {
-           
-            if (message.type === 'LatestMintedNFTs' && message.data) {
-                const event: LatestMintedNFTsEvent = message.data
-                console.log('[Banner] 📦 Received LatestMintedNFTs via WebSocket:', event)
+    useWebSocketEvent<LatestMintedNFTsEvent>('LatestMintedNFTs', (event) => {
+        if (!event) return
+        console.log('[Banner] 📦 Received LatestMintedNFTs via WebSocket:', event)
  
                
  const processedNfts = event.nfts.map(nft => ({
@@ -92,22 +84,12 @@ export function Banner() {
 
                 setMintedNFTs(processedNfts)
  setIsLoading(false)
- }
- },
-        onError: () => {
-            // Silently handle WebSocket errors (backend may be offline)
-            if (import.meta.env.DEV) {
-                console.warn('[Banner] WebSocket unavailable (backend offline)')
-            }
- setIsLoading(false)
- },
- })
+    })
 
-    // After WebSocket connection succeeds, actively request initial data once (only on first connection)
+    // Load initial data independently so WebSocket outages do not leave the banner waiting forever.
  useEffect(() => {
-        // Only request when WebSocket is connected and initial data hasn't been requested yet
-        if (wsStatus === 'connected' && !hasRequestedInitialDataRef.current) {
-            hasRequestedInitialDataRef.current = true
+        if (hasRequestedInitialDataRef.current) return
+        hasRequestedInitialDataRef.current = true
 
             const fetchInitialNFTs = async () => {
  setIsLoading(true)
@@ -146,8 +128,7 @@ export function Banner() {
  }
 
  fetchInitialNFTs()
- }
-    }, [wsStatus])
+    }, [])
 
     // If no data, don't display banner
     if (!isLoading && mintedNFTs.length === 0) {
