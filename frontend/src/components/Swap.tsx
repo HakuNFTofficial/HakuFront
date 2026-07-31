@@ -4,6 +4,7 @@ import { parseUnits, formatUnits, keccak256, encodeAbiParameters, encodePacked, 
 import { CONTRACTS, POOL_CONFIG, SWAP_CONFIG, SWAP_EXECUTOR_ABI, ERC20_ABI, POOL_MANAGER_ABI, QUOTER_ABI } from '../config/contracts'
 import { useWalletChainId } from '../hooks/useWalletChainId'
 import { REQUIRED_CHAIN_ID, getChainName } from '../config/chain'
+import { BALANCE_REFETCH_MS, POOL_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
 
 export function Swap() {
     const { address } = useAccount()
@@ -38,7 +39,8 @@ export function Swap() {
         address: address,
         query: {
             enabled: !!address,
-            refetchInterval: 5000,
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
 
@@ -50,7 +52,8 @@ export function Swap() {
         args: address ? [address] : undefined,
         query: {
             enabled: !!address,
-            refetchInterval: 5000,
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
 
@@ -132,7 +135,8 @@ export function Swap() {
         args: poolSlot ? [poolSlot] : undefined,
         query: {
             enabled: !!poolSlot,
-            refetchInterval: 5000, // Refresh pool state every 5 seconds
+            refetchInterval: visibleRefetchInterval(POOL_REFETCH_MS),
+            refetchIntervalInBackground: false,
         }
     })
 
@@ -144,7 +148,8 @@ export function Swap() {
         args: liquiditySlot ? [liquiditySlot] : undefined,
         query: {
             enabled: !!liquiditySlot,
-            refetchInterval: 5000,
+            refetchInterval: visibleRefetchInterval(POOL_REFETCH_MS),
+            refetchIntervalInBackground: false,
         }
     })
 
@@ -314,7 +319,8 @@ export function Swap() {
         args: quoteParams ? [quoteParams] : undefined,
         query: {
             enabled: !!quoteParams && !!amount && amount !== '0' && hasLiquidity,
-            refetchInterval: 5000, 
+            refetchInterval: visibleRefetchInterval(POOL_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
 

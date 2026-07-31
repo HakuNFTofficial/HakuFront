@@ -5,6 +5,7 @@ import { NFTImageReveal } from './NFTImageReveal'
 import { CONTRACTS, HUKU_NFT_ABI, ERC20_ABI } from '../config/contracts'
 import { useEventAssociation } from '../hooks/useEventAssociation'
 import { useWebSocketEvent } from '../providers/WebSocketProvider'
+import { BALANCE_REFETCH_MS, STATIC_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
 
 interface NFT {
     nft_id: number
@@ -101,7 +102,8 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
         abi: HUKU_NFT_ABI,
         functionName: 'mintPrice',
         query: {
-            refetchInterval: 10000, // Refresh every 10 seconds
+            refetchInterval: visibleRefetchInterval(STATIC_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
     
@@ -122,7 +124,8 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             : undefined,
         query: {
             enabled: !!address && !!CONTRACTS.HUKU_NFT,
-            refetchInterval: 3000, // Refresh every 3 seconds
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
     

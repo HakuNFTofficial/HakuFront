@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { getIPFSImageUrl } from '../config/ipfs'
+import { startAnimationFrameLoop } from '../services/animationFrameLoop'
 
 interface Chip {
     x: number      // Pixel coordinate X
@@ -280,6 +281,8 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
         const chipsCanvas = chipsCanvasRef.current
         if (!baseCanvas || !chipsCanvas || !baseImage) return
 
+        let stopAnimation: (() => void) | undefined
+
         const baseCtx = baseCanvas.getContext('2d', { willReadFrequently: true })
         const chipsCtx = chipsCanvas.getContext('2d', { willReadFrequently: true })
         if (!baseCtx || !chipsCtx) return
@@ -454,7 +457,6 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
                 // ✨ If no chips, don't render stars (but continue function execution, don't return)
                 if (chipsToRender.length > 0) {
                     // ✨ Use previously calculated starCount (max 30), avoid too many chips causing star overlap
-                    console.log(`[NFTImageReveal] ⭐ Drawing ${starCount} stars, revealElapsed=${revealElapsed.toFixed(0)}ms, chipsCenter=(${chipsCenterX.toFixed(1)}, ${chipsCenterY.toFixed(1)})`)
                     for (let i = 0; i < starCount; i++) {
                     const chipRevealTime = i * chipRevealDelay
                     const chipRevealProgress = Math.max(0, Math.min(1, (revealElapsed - chipRevealTime) / STAR_ANIMATION_DURATION))
@@ -476,7 +478,6 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
                     if (starAlpha > 0.01) {
                         // Generate fixed random starting position for each star (generate only once)
                         if (!snowflakeStartPositions.current.has(i)) {
-                            console.log(`[NFTImageReveal] ⭐ Generating start position for star ${i}`)
                             // Randomly select starting position from all sides of NFT image
                             const side = Math.floor(Math.random() * 4) // 0=top, 1=right, 2=bottom, 3=left
                             let startX, startY
@@ -698,21 +699,19 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
                 revealStartTimeRef.current = performance.now()
                 
                 // Still need animation loop to draw star effects
-                const revealAnimate = () => {
+                stopAnimation = startAnimationFrameLoop(() => {
                     const now = performance.now()
                     const revealElapsed = now - revealStartTimeRef.current
 
                     // If all animations completed (8s + 200ms buffer), stop animation
                     if (revealElapsed > TOTAL_ANIMATION_TIME + 200) {
-                        return
+                        return false
                     }
 
                     // In high-performance mode: quickly draw all chips first, then draw star animation
                     drawChips(true) // forceShowAll=true will draw chips and continue executing star code
-                    requestAnimationFrame(revealAnimate)
-                }
-
-                requestAnimationFrame(revealAnimate)
+                    return true
+                })
             } else {
                 // ✨ Normal mode: batch display all chips directly, only keep star animation
                 // Reset animation start time (for star animation)
@@ -722,26 +721,26 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
                 drawChips(false)
 
                 // Animation loop (only for star animation, chips already batch displayed)
-                const revealAnimate = () => {
+                stopAnimation = startAnimationFrameLoop(() => {
                     const now = performance.now()
                     const revealElapsed = now - revealStartTimeRef.current
 
                     // If all animations completed (8s + 200ms buffer), stop animation
                     if (revealElapsed > TOTAL_ANIMATION_TIME + 200) {
-                        return
+                        return false
                     }
 
                     // Continue drawing (chips stay displayed, stars continue animating)
                     drawChips(false)
-                    requestAnimationFrame(revealAnimate)
-                }
-
-                requestAnimationFrame(revealAnimate)
+                    return true
+                })
             }
         } else {
             console.log(`[NFTImageReveal] ✅ Color base image drawn (all chips owned)`)
             revealStartTimeRef.current = 0
         }
+
+        return () => stopAnimation?.()
     }, [baseImage, chips, nft.all_chips_owned, nft.is_mint]) // Depends on baseImage, chips, all_chips_owned and is_mint
 
     // ✅ Effect 3 removed: no longer draw border animation
@@ -909,5 +908,4 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
         </div>
     )
 }
-
 
