@@ -1,6 +1,7 @@
 import { useAccount, useBalance, useReadContract } from 'wagmi'
 import { formatEther, formatUnits } from 'viem'
 import { CONTRACTS, ERC20_ABI } from '../config/contracts'
+import { BALANCE_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
 
 /**
  * Wallet Balance Component - Similar to blockchain explorer's balance display
@@ -19,7 +20,8 @@ export function WalletBalance() {
         address: address,
         query: {
             enabled: isConnected && !!address,
-            refetchInterval: 5000, // Refresh every 5 seconds
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
 
@@ -31,7 +33,8 @@ export function WalletBalance() {
         args: address ? [address] : undefined,
         query: {
             enabled: isConnected && !!address,
-            refetchInterval: 5000,
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
 
