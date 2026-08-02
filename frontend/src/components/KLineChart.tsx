@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { createChart, IChartApi, CandlestickData, UTCTimestamp, CandlestickSeries, HistogramSeries } from 'lightweight-charts'
-import { useWebSocket } from '../hooks/useWebSocket'
+import { useWebSocketEvent, useWebSocketReconnect, useWebSocketStatus } from '../providers/WebSocketProvider'
 import { TRADING_PAIR_CONFIG } from '../config/contracts'
 
 interface KlineUpdateEvent {
@@ -37,98 +37,77 @@ export function KLineChart() {
     const [priceChange, setPriceChange] = useState<number>(0)
     const [chartInitialized, setChartInitialized] = useState(false)
 
-    // Fetch historical data
-    useEffect(() => {
-        const fetchHistoricalData = async () => {
-            // Don't fetch if chart isn't initialized yet
-            if (!chartRef.current || !candlestickSeriesRef.current || !volumeSeriesRef.current) {
+    const fetchHistoricalData = useCallback(async () => {
+        // Don't fetch if chart isn't initialized yet
+        if (!chartRef.current || !candlestickSeriesRef.current || !volumeSeriesRef.current) {
+            return
+        }
+
+        setIsLoading(true)
+        setError(null)
+
+        try {
+            const response = await fetch(`/api/klines?pair_id=${TRADING_PAIR_CONFIG.PAIR_ID}&interval=${interval}`)
+            if (!response.ok) {
+                throw new Error('Failed to fetch kline data')
+            }
+
+            const data: KlineUpdateEvent[] = await response.json()
+
+            if (data.length === 0) {
+                setError('No data available')
+                setIsLoading(false)
                 return
             }
 
-            setIsLoading(true)
-            setError(null)
+            const candlestickData: CandlestickData[] = data.map(item => ({
+                time: item.start_time as UTCTimestamp,
+                open: parseFloat(item.open),
+                high: parseFloat(item.high),
+                low: parseFloat(item.low),
+                close: parseFloat(item.close)
+            }))
 
-            try {
-                const response = await fetch(`/api/klines?pair_id=${TRADING_PAIR_CONFIG.PAIR_ID}&interval=${interval}`)
-                if (!response.ok) {
-                    throw new Error('Failed to fetch kline data')
-                }
+            const volumeData = data.map(item => ({
+                time: item.start_time as UTCTimestamp,
+                value: parseFloat(item.volume_base) / 1e18,
+                color: parseFloat(item.close) >= parseFloat(item.open) ? '#4ade8080' : '#ef444480'
+            }))
 
-                const data: KlineUpdateEvent[] = await response.json()
+            if (candlestickSeriesRef.current && volumeSeriesRef.current) {
+                candlestickSeriesRef.current.setData(candlestickData)
+                volumeSeriesRef.current.setData(volumeData)
 
-                if (data.length === 0) {
-                    setError('No data available')
-                    setIsLoading(false)
-                    return
-                }
+                const lastCandle = data[data.length - 1]
+                const firstCandle = data[0]
+                setCurrentPrice(lastCandle.close)
 
-                // Transform data for TradingView chart
-                const candlestickData: CandlestickData[] = data.map(item => ({
-                    time: item.start_time as UTCTimestamp,
-                    open: parseFloat(item.open),
-                    high: parseFloat(item.high),
-                    low: parseFloat(item.low),
-                    close: parseFloat(item.close)
-                }))
-
-                const volumeData = data.map(item => ({
-                    time: item.start_time as UTCTimestamp,
-                    value: parseFloat(item.volume_base) / 1e18, // Scale down volume from wei
-                    color: parseFloat(item.close) >= parseFloat(item.open) ? '#4ade8080' : '#ef444480'
-                }))
-
-                // Update series with data
-                if (candlestickSeriesRef.current && volumeSeriesRef.current) {
-                    candlestickSeriesRef.current.setData(candlestickData)
-                    volumeSeriesRef.current.setData(volumeData)
-
-                    // Set current price and calculate change
-                    const lastCandle = data[data.length - 1]
-                    const firstCandle = data[0]
-                    setCurrentPrice(lastCandle.close)
-
-                    const change = ((parseFloat(lastCandle.close) - parseFloat(firstCandle.open)) / parseFloat(firstCandle.open)) * 100
-                    setPriceChange(change)
-                }
-
-                setIsLoading(false)
-            } catch (err) {
-                console.error('Failed to fetch kline data:', err)
-                setError('Failed to load chart data')
-                setIsLoading(false)
+                const change = ((parseFloat(lastCandle.close) - parseFloat(firstCandle.open)) / parseFloat(firstCandle.open)) * 100
+                setPriceChange(change)
             }
+
+            setIsLoading(false)
+        } catch (err) {
+            console.error('Failed to fetch kline data:', err)
+            setError('Failed to load chart data')
+            setIsLoading(false)
         }
+    }, [interval])
 
+    // Fetch an initial snapshot and whenever the interval/chart changes.
+    useEffect(() => {
         fetchHistoricalData()
-    }, [interval, chartInitialized])
+    }, [chartInitialized, fetchHistoricalData])
 
-    // WebSocket for real-time updates
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsHost = window.location.host 
-    const { status: wsStatus } = useWebSocket({
-        url: `${wsProtocol}//${wsHost}/ws`, 
-        enabled: !isLoading && !error,
-        onMessage: (message: any) => {
+    const wsStatus = useWebSocketStatus()
+    useWebSocketReconnect(fetchHistoricalData)
+    useWebSocketEvent<KlineUpdateEvent | KlineUpdateEvent[]>('KlineUpdate', (data) => {
             if (!candlestickSeriesRef.current || !volumeSeriesRef.current) {
                 console.warn('Chart series not initialized, skipping update')
                 return
             }
 
-            console.log('WS Message received:', message)
-
-            let dataToProcess = message
-
-            // Handle wrapped messages (e.g. { type: 'KlineUpdate', data: ... })
-            if (message.type) {
-                if (message.type === 'KlineUpdate' && message.data) {
-                    dataToProcess = message.data
-                } else {
-                    // Ignore other message types (like 'Swap')
-                    return
-                }
-            }
-
-            const events = Array.isArray(dataToProcess) ? dataToProcess : [dataToProcess]
+            const events = Array.isArray(data) ? data : [data]
 
             events.forEach((event: KlineUpdateEvent) => {
                 // Only update if it's the current interval
@@ -164,8 +143,7 @@ export function KLineChart() {
                     console.error('Error updating chart series:', err)
                 }
             })
-        }
-    })
+    }, !isLoading && !error)
 
     // Initialize chart
     useEffect(() => {

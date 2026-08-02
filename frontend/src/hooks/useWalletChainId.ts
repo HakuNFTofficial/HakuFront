@@ -6,6 +6,7 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useAccount } from 'wagmi'
+import { WALLET_CHAIN_POLL_MS } from '../config/queryPolicy'
 
 export function useWalletChainId() {
     const { isConnected, connector } = useAccount()
@@ -61,6 +62,7 @@ export function useWalletChainId() {
         // Polling function: serves as a backup mechanism for event listening
         const pollChainId = async () => {
             if (!isMounted || !providerRef.current) return
+            if (typeof document !== 'undefined' && document.visibilityState !== 'visible') return
 
             try {
                 const hexChainId = await providerRef.current.request({ method: 'eth_chainId' })
@@ -184,8 +186,8 @@ export function useWalletChainId() {
                     })
 
                     // Start polling as backup mechanism (events may be unreliable in multi-wallet environments)
-                    console.log('[useWalletChainId] 🔄 Starting polling backup mechanism (every 2 seconds)')
-                    pollInterval = setInterval(pollChainId, 2000)
+                    console.log('[useWalletChainId] 🔄 Starting low-frequency polling backup mechanism')
+                    pollInterval = setInterval(pollChainId, WALLET_CHAIN_POLL_MS)
                 }
             } catch (error) {
                 console.error('[useWalletChainId] Initialization failed:', error)

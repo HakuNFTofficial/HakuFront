@@ -83,7 +83,6 @@ export async function checkForUpdate(): Promise<boolean> {
         // Same version, do not prompt for update
         // Note: No longer comparing build time because development environment generates new build time on each restart
         // This causes false positives. If you need to detect different builds of the same version, use version numbers to distinguish
-        console.log(`[Version] Same version: ${APP_VERSION}`)
         return false
     } catch (error) {
         console.warn('[Version] Failed to check for update:', error)
@@ -103,4 +102,3 @@ export function logVersionInfo() {
         console.log('Build Timestamp:', new Date(info.timestamp).toLocaleString())
     }
 }
-

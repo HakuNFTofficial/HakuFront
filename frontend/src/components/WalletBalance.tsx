@@ -1,6 +1,8 @@
 import { useAccount, useBalance, useReadContract } from 'wagmi'
 import { formatEther, formatUnits } from 'viem'
 import { CONTRACTS, ERC20_ABI } from '../config/contracts'
+import { BALANCE_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
+import { getBalanceDisplayState } from '../utils/rpcDisplay'
 
 /**
  * Wallet Balance Component - Similar to blockchain explorer's balance display
@@ -15,11 +17,16 @@ export function WalletBalance() {
     const { address, isConnected } = useAccount()
 
     // 1. Query native token balance (USDC) - corresponds to eth_getBalance in blockchain explorer
-    const { data: nativeBalance, isLoading: isLoadingNative } = useBalance({
+    const {
+        data: nativeBalance,
+        isLoading: isLoadingNative,
+        error: nativeBalanceError,
+    } = useBalance({
         address: address,
         query: {
             enabled: isConnected && !!address,
-            refetchInterval: 5000, // Refresh every 5 seconds
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
 
@@ -31,7 +38,8 @@ export function WalletBalance() {
         args: address ? [address] : undefined,
         query: {
             enabled: isConnected && !!address,
-            refetchInterval: 5000,
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
 
@@ -53,7 +61,11 @@ export function WalletBalance() {
         return null
     }
 
-    const nativeBalanceFormatted = nativeBalance ? formatEther(nativeBalance.value) : '0'
+    const nativeBalanceDisplay = getBalanceDisplayState(
+        nativeBalance ? formatEther(nativeBalance.value) : undefined,
+        isLoadingNative,
+        nativeBalanceError,
+    )
     // Use dynamically read decimals, default to 18 if read fails
     const tokenBBalanceFormatted = tokenBBalance ? formatUnits(tokenBBalance, tokenBDecimals ?? 18) : '0'
 
@@ -69,12 +81,19 @@ export function WalletBalance() {
                         <div className="text-white text-sm font-medium">USDC</div>
                     </div>
                     <div className="text-right">
-                        {isLoadingNative ? (
+                        {nativeBalanceDisplay.kind === 'loading' ? (
                             <span className="loading loading-spinner loading-xs"></span>
                         ) : (
-                            <div className="text-white font-semibold text-sm">
-                                {parseFloat(nativeBalanceFormatted).toFixed(4)}
-                            </div>
+                            <>
+                                <div className="text-white font-semibold text-sm">
+                                    {nativeBalanceDisplay.value}
+                                </div>
+                                {nativeBalanceDisplay.kind === 'unavailable' && (
+                                    <div className="text-red-300 text-[10px] mt-0.5">
+                                        {nativeBalanceDisplay.label}
+                                    </div>
+                                )}
+                            </>
                         )}
                     </div>
                 </div>
