@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { buildMetadata, buildRelease, tokenUrlFromFileName } from './release-lib.mjs'
+import { buildMetadata, buildRelease, tokenUrlFromFileName, validateRelease } from './release-lib.mjs'
 
 const CID = 'bafybeido5yvptbcf5vgmtth52byp6pdj2q6g3kpy45nppd6nifqoa76qzi'
 
@@ -64,8 +64,9 @@ test('unminted rows derive token URL from the numeric PNG filename', async () =>
   writeFileSync(join(sourceImages, '12.png'), Buffer.from('png-fixture'))
   writeFileSync(join(sourceJson, '12.json'), JSON.stringify({ name: 'Haku #12', attributes: [] }))
 
+  const sourceMap = [{ nftId: 1261, fileName: '12.png', tokenId: null, tokenUrl: null, isMint: 0 }]
   const manifest = await buildRelease({
-    sourceMap: [{ nftId: 1261, fileName: '12.png', tokenId: null, tokenUrl: null, isMint: 0 }],
+    sourceMap,
     sourceJsonDir: sourceJson,
     sourceImageDir: sourceImages,
     outputDir,
@@ -75,4 +76,5 @@ test('unminted rows derive token URL from the numeric PNG filename', async () =>
   })
   assert.equal(manifest.entries[0].tokenUrl, '12')
   assert.equal(manifest.entries[0].tokenId, null)
+  assert.equal(validateRelease({ releaseDir: outputDir, sourceMap }).entries.length, 1)
 })

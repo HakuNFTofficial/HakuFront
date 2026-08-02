@@ -184,7 +184,7 @@ export function validateRelease({ releaseDir, sourceMap }) {
     throw new Error('Release entry count does not match the source map')
   }
 
-  const expectedTokenUrls = new Set(sourceMap.map((row) => String(row.tokenUrl)))
+  const expectedTokenUrls = new Set(sourceMap.map((row) => tokenUrlFromFileName(row.fileName)))
   const manifestTokenUrls = new Set()
   for (const entry of manifest.entries) {
     if (!expectedTokenUrls.has(entry.tokenUrl) || manifestTokenUrls.has(entry.tokenUrl)) {
