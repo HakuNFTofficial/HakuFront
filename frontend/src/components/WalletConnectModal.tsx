@@ -22,7 +22,12 @@ export function WalletConnectModal({
         string | null
     >(null)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
+    const dialogRef = useRef<HTMLElement>(null)
+    const closeButtonRef = useRef<HTMLButtonElement>(null)
     const firstWalletRef = useRef<HTMLButtonElement>(null)
+    const pendingConnectorUidRef = useRef<string | null>(null)
+    const isOpenRef = useRef(isOpen)
+    isOpenRef.current = isOpen
     const onCloseRef = useRef(onClose)
     onCloseRef.current = onClose
     const options = useMemo(
@@ -32,7 +37,6 @@ export function WalletConnectModal({
 
     useEffect(() => {
         if (!isOpen) {
-            setPendingConnectorUid(null)
             setErrorMessage(null)
             return
         }
@@ -42,10 +46,45 @@ export function WalletConnectModal({
         document.body.style.overflow = 'hidden'
 
         const focusFrame = window.requestAnimationFrame(() => {
-            firstWalletRef.current?.focus()
+            ;(firstWalletRef.current ?? closeButtonRef.current)?.focus()
         })
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') onCloseRef.current()
+            if (event.key === 'Escape') {
+                if (pendingConnectorUidRef.current === null) {
+                    onCloseRef.current()
+                }
+                return
+            }
+
+            if (event.key !== 'Tab') return
+
+            const focusableElements = Array.from(
+                dialogRef.current?.querySelectorAll<HTMLElement>(
+                    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+                ) ?? [],
+            )
+            const firstFocusable = focusableElements[0]
+            const lastFocusable = focusableElements[focusableElements.length - 1]
+
+            if (!firstFocusable || !lastFocusable) {
+                event.preventDefault()
+                dialogRef.current?.focus()
+                return
+            }
+
+            const activeElement = document.activeElement
+            const focusIsOutside = !dialogRef.current?.contains(activeElement)
+
+            if (event.shiftKey && (activeElement === firstFocusable || focusIsOutside)) {
+                event.preventDefault()
+                lastFocusable.focus()
+            } else if (
+                !event.shiftKey &&
+                (activeElement === lastFocusable || focusIsOutside)
+            ) {
+                event.preventDefault()
+                firstFocusable.focus()
+            }
         }
         window.addEventListener('keydown', handleKeyDown)
 
@@ -61,19 +100,30 @@ export function WalletConnectModal({
 
     const isConnecting = pendingConnectorUid !== null
 
+    function requestClose() {
+        if (pendingConnectorUidRef.current !== null) return
+        onCloseRef.current()
+    }
+
     async function handleConnect(connector: Connector) {
+        if (pendingConnectorUidRef.current !== null) return
+
+        pendingConnectorUidRef.current = connector.uid
         setPendingConnectorUid(connector.uid)
         setErrorMessage(null)
 
         try {
             await onConnect(connector)
-            onClose()
+            onCloseRef.current()
         } catch (error) {
             if (import.meta.env.DEV && import.meta.env.MODE !== 'test') {
                 console.error('[WalletConnectModal] Connection failed:', error)
             }
-            setErrorMessage(getWalletConnectionErrorMessage(error))
+            if (isOpenRef.current) {
+                setErrorMessage(getWalletConnectionErrorMessage(error))
+            }
         } finally {
+            pendingConnectorUidRef.current = null
             setPendingConnectorUid(null)
         }
     }
@@ -83,14 +133,16 @@ export function WalletConnectModal({
             data-testid="wallet-modal-backdrop"
             className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
             onMouseDown={(event) => {
-                if (event.target === event.currentTarget) onClose()
+                if (event.target === event.currentTarget) requestClose()
             }}
         >
             <section
+                ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="wallet-connect-title"
                 aria-describedby="wallet-connect-description"
+                tabIndex={-1}
                 className="relative w-full max-w-md overflow-hidden rounded-2xl border border-indigo-500/40 bg-gradient-to-br from-gray-900 to-gray-800 text-white shadow-2xl"
                 style={{
                     boxShadow:
@@ -115,10 +167,12 @@ export function WalletConnectModal({
                         </p>
                     </div>
                     <button
+                        ref={closeButtonRef}
                         type="button"
                         aria-label="Close wallet picker"
-                        onClick={onClose}
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-2xl leading-none text-gray-400 transition-colors hover:bg-gray-700 hover:text-white focus:ring-2 focus:ring-indigo-500"
+                        disabled={isConnecting}
+                        onClick={requestClose}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-2xl leading-none text-gray-400 transition-colors hover:bg-gray-700 hover:text-white focus:ring-2 focus:ring-indigo-500 disabled:cursor-wait disabled:opacity-50"
                     >
                         <span aria-hidden="true">×</span>
                     </button>
