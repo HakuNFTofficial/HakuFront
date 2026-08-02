@@ -21,11 +21,14 @@ export function WalletConnectModal({
     const [pendingConnectorUid, setPendingConnectorUid] = useState<
         string | null
     >(null)
+    const [isExternalModalHandoff, setIsExternalModalHandoff] =
+        useState(false)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const dialogRef = useRef<HTMLElement>(null)
     const closeButtonRef = useRef<HTMLButtonElement>(null)
     const firstWalletRef = useRef<HTMLButtonElement>(null)
     const pendingConnectorUidRef = useRef<string | null>(null)
+    const externalModalHandoffRef = useRef(false)
     const isOpenRef = useRef(isOpen)
     isOpenRef.current = isOpen
     const onCloseRef = useRef(onClose)
@@ -49,6 +52,8 @@ export function WalletConnectModal({
             ;(firstWalletRef.current ?? closeButtonRef.current)?.focus()
         })
         const handleKeyDown = (event: KeyboardEvent) => {
+            if (externalModalHandoffRef.current) return
+
             if (event.key === 'Escape') {
                 if (pendingConnectorUidRef.current === null) {
                     onCloseRef.current()
@@ -108,8 +113,11 @@ export function WalletConnectModal({
     async function handleConnect(connector: Connector) {
         if (pendingConnectorUidRef.current !== null) return
 
+        const handsOffToExternalModal = connector.type === 'walletConnect'
         pendingConnectorUidRef.current = connector.uid
+        externalModalHandoffRef.current = handsOffToExternalModal
         setPendingConnectorUid(connector.uid)
+        setIsExternalModalHandoff(handsOffToExternalModal)
         setErrorMessage(null)
 
         try {
@@ -124,14 +132,17 @@ export function WalletConnectModal({
             }
         } finally {
             pendingConnectorUidRef.current = null
+            externalModalHandoffRef.current = false
             setPendingConnectorUid(null)
+            setIsExternalModalHandoff(false)
         }
     }
 
     return (
         <div
             data-testid="wallet-modal-backdrop"
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+            aria-hidden={isExternalModalHandoff || undefined}
+            className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm ${isExternalModalHandoff ? 'invisible pointer-events-none' : ''}`}
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget) requestClose()
             }}
@@ -139,7 +150,7 @@ export function WalletConnectModal({
             <section
                 ref={dialogRef}
                 role="dialog"
-                aria-modal="true"
+                aria-modal={isExternalModalHandoff ? undefined : 'true'}
                 aria-labelledby="wallet-connect-title"
                 aria-describedby="wallet-connect-description"
                 tabIndex={-1}

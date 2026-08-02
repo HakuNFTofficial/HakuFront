@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type { Connector } from 'wagmi'
 import { describe, expect, test, vi } from 'vitest'
@@ -191,6 +191,51 @@ describe('WalletConnectModal', () => {
         expect(onClose).not.toHaveBeenCalled()
 
         await act(async () => resolveConnection?.())
+    })
+
+    test('yields modal semantics and keyboard focus to the WalletConnect portal', async () => {
+        const user = userEvent.setup()
+        let rejectConnection: ((error: unknown) => void) | undefined
+        render(
+            <>
+                <WalletConnectModal
+                    isOpen
+                    connectors={connectors}
+                    onClose={vi.fn()}
+                    onConnect={() =>
+                        new Promise<void>((_resolve, reject) => {
+                            rejectConnection = reject
+                        })
+                    }
+                />
+                <button type="button">WalletConnect QR action</button>
+            </>,
+        )
+
+        const hakuBackdrop = screen.getByTestId('wallet-modal-backdrop')
+        const qrAction = screen.getByRole('button', {
+            name: 'WalletConnect QR action',
+        })
+        await user.click(
+            screen.getByRole('button', { name: /^WalletConnect Scan/i }),
+        )
+
+        expect(hakuBackdrop).toHaveAttribute('aria-hidden', 'true')
+
+        qrAction.focus()
+        fireEvent.keyDown(qrAction, { key: 'Tab' })
+        expect(qrAction).toHaveFocus()
+
+        await act(async () =>
+            rejectConnection?.({ name: 'UserRejectedRequestError' }),
+        )
+        expect(await screen.findByRole('alert')).toHaveTextContent(
+            'Connection request was cancelled.',
+        )
+        expect(hakuBackdrop).not.toHaveAttribute('aria-hidden')
+        expect(
+            screen.getByRole('dialog', { name: 'Connect Wallet' }),
+        ).toHaveAttribute('aria-modal', 'true')
     })
 
     test('keeps the modal open and shows a recoverable connection error', async () => {
