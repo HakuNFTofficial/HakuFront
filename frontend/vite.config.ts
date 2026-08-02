@@ -1,3 +1,5 @@
+/// <reference types="vitest/config" />
+
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { readFileSync } from 'fs'
@@ -9,6 +11,12 @@ const version = packageJson.version || '0.0.0'
 const buildTime = new Date().toISOString()
 
 export default defineConfig({
+    test: {
+        environment: 'jsdom',
+        globals: true,
+        setupFiles: './src/test/setup.ts',
+        css: true,
+    },
     plugins: [
         react(),
         // 自定义插件：注入版本信息到HTML
