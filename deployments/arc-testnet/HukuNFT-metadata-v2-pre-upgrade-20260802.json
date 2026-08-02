@@ -1,0 +1,19 @@
+{
+  "capturedAt": "2026-08-02T17:13:41.773Z",
+  "chainId": 5042002,
+  "proxy": "0x703CEB677e9fbB1f4c6E917195c3b63B7EFA4Fe8",
+  "proxyHasCode": true,
+  "implementation": "0x73a0c937228837b79c2364f14b660c8a7d8f1472",
+  "implementationHasCode": true,
+  "proxiableUUID": "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+  "owner": "0xD693a84A55fd1CbA3e1B5d82571b4Cfe1aF14510",
+  "baseCID": "QmeqYrSGKCaKzcLGuJT3N12HFH4ws47Lqbs18hSiuGEZGn",
+  "metadataBaseURI": null,
+  "nextTokenId": "40",
+  "hakuToken": "0x19c02CC2118Afe3CB59bb2f777d1a1124c7A6C12",
+  "mintPrice": "10000000000000000000000",
+  "referenceTokenId": "38",
+  "referenceTokenOwner": "0x2FBF4aD90BfE460A0eD12ac8ebF969a1c9462E8c",
+  "referenceTokenURI": "ipfs://QmeqYrSGKCaKzcLGuJT3N12HFH4ws47Lqbs18hSiuGEZGn/740.json",
+  "supportsERC4906": true
+}

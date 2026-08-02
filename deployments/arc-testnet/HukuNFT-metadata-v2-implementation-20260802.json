@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "status": "implementation-deployed-proxy-upgrade-pending-remote-pin",
+  "recordedAt": "2026-08-02T17:16:26Z",
+  "chainId": 5042002,
+  "sourceCommit": "9f8f5b7d7664df53dabbadb1a9bd421a78c6f4bf",
+  "preUpgradeTag": "hukunft-metadata-v1-pre-upgrade-20260802",
+  "proxy": "0x703CEB677e9fbB1f4c6E917195c3b63B7EFA4Fe8",
+  "owner": "0xD693a84A55fd1CbA3e1B5d82571b4Cfe1aF14510",
+  "oldImplementation": "0x73a0c937228837b79c2364f14b660c8a7d8f1472",
+  "newImplementation": "0xe6323f4b42719bb861b7768ab7f78e980dc3f4b6",
+  "implementationDeployment": {
+    "transactionHash": "0x837edb1584d4529f43f2c84cee195c2209cd2ab721cf1e5276b5a09b1ccb7d39",
+    "blockNumber": "54966405",
+    "artifactSha256": "c7d207dd2fa6232ab61cb02f21c6e6c75ea50b989dd28299574bfc44865c2299",
+    "canonicalRuntimeBytecodeHash": "0xc40d1de6cdaaf03150dd3a9edc194fab9cf3958cf18a67452603234235f365ce",
+    "proxiableUUID": "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc",
+    "directInitializeV2Call": "reverted with 0xf92ee8a9",
+    "proxyTouched": false
+  },
+  "metadataRelease": {
+    "baseURI": "https://www.hakupump.club/nft-metadata/v2/",
+    "metadataRootCIDv1": "bafybeiekdqxar7drh2fxymm26nucovif6n5j4pgpnhq5kfx7weexwvqohi",
+    "mediaRootCIDv1": "bafybeibjdt2k5yy4ycuhpr3ikpmjdchojbxyww72arb2px5lp45jg62gou",
+    "manifestCIDv1": "bafybeiezthitlgoi2mygo22sxlk5vbs3sesc56fbys4wiei27unfyvvm2e",
+    "manifestSha256": "cc3a628f0711c10e7fc6c338a3ca4ba4b3b385ccfff99d5e6a1bea02a4c5f5f1",
+    "serverLocalRecursivePinsVerified": true,
+    "pinataRemotePinsVerified": false
+  },
+  "serverDeployment": {
+    "nginxConfigSha256": "891808faa04ba8096689d85a9add81b4e266db67537a4141c91b513f77428756",
+    "nginxBackup": "/etc/nginx/conf.d/haku.conf.pre-hukunft-v2-20260802T163951Z",
+    "metadataDirectory": "/usr/local/www/nft-metadata/v2",
+    "mediaDirectory": "/usr/local/www/nft-media/v2"
+  },
+  "verification": {
+    "storageLayoutSha256": "2ca062faa7fe14243d089852302b4f857036975bbc14bc842ec22d94c34b41d9",
+    "preUpgradeSnapshot": "HukuNFT-metadata-v2-pre-upgrade-20260802.json",
+    "upgradePreview": "HukuNFT-metadata-v2-upgrade-preview-20260802.json",
+    "upgradeCalldataSha256": "d2c3106719c7e604177dad967756edff68a38b56f9b5e645ef57988fbc2bec98"
+  },
+  "activationGate": "Do not upgrade the proxy until both CIDv1 roots are verified as remotely pinned through Pinata."
+}
