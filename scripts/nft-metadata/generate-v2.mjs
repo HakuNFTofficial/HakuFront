@@ -32,15 +32,19 @@ export function parseGenerateArgs(argv) {
   return parsed
 }
 
+export function kuboOnlyHashArgs(filePath) {
+  return ['add', '--only-hash', '--cid-version=1', '--raw-leaves=false', '--quiet', filePath]
+}
+
 function cidForFile(filePath) {
-  return execFileSync('ipfs', ['add', '--only-hash', '--cid-version=1', '--quiet', filePath], {
+  return execFileSync('ipfs', kuboOnlyHashArgs(filePath), {
     encoding: 'utf8',
   }).trim()
 }
 
 function cidForDirectory(directoryPath) {
   const output = execFileSync('ipfs', [
-    'add', '--only-hash', '--cid-version=1', '--recursive', '--quiet', directoryPath,
+    'add', '--only-hash', '--cid-version=1', '--raw-leaves=false', '--recursive', '--quiet', directoryPath,
   ], { encoding: 'utf8' }).trim()
   return output.split(/\r?\n/).at(-1)
 }

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { parseGenerateArgs } from './generate-v2.mjs'
+import { kuboOnlyHashArgs, parseGenerateArgs } from './generate-v2.mjs'
 import { parseValidateArgs, validatePublicRelease } from './validate-v2.mjs'
 import { sha256 } from './release-lib.mjs'
 
@@ -21,6 +21,17 @@ test('generation CLI requires every reproducibility input', () => {
     generatedAt: '2026-08-02T16:00:00.000Z',
     gitCommit: 'abc123',
   })
+})
+
+test('Kubo hashing preserves the existing dag-pb CID as CIDv1', () => {
+  assert.deepEqual(kuboOnlyHashArgs('/tmp/740.png'), [
+    'add',
+    '--only-hash',
+    '--cid-version=1',
+    '--raw-leaves=false',
+    '--quiet',
+    '/tmp/740.png',
+  ])
 })
 
 test('validation CLI accepts an optional public origin only', () => {
