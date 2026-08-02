@@ -23,5 +23,7 @@ describe('RPC failure UX', () => {
         )
         expect(swapSource).toContain('RPC_UNAVAILABLE_MESSAGE')
         expect(swapSource).not.toContain('Error: {poolError.message}')
+        expect(swapSource).not.toContain('{quoteError.message}')
+        expect(swapSource).toContain('[Swap] Quote RPC read failed')
     })
 })

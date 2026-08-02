@@ -341,6 +341,12 @@ export function Swap() {
         },
     })
 
+    useEffect(() => {
+        if (quoteError && import.meta.env.DEV) {
+            console.error('[Swap] Quote RPC read failed', quoteError)
+        }
+    }, [quoteError])
+
     // Parse Quoter result and calculate slippage
     const quoteInfo = useMemo(() => {
         if (!quoteResult || !currentPrice || !amount || amount === '0') return null
@@ -862,16 +868,9 @@ export function Swap() {
                         </div>
                     )}
                     {quoteError && amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
-                        <div className="mt-2 px-4 py-3 bg-red-900/20 rounded-lg border border-red-700/50">
-                            <div className="text-red-400 text-xs font-semibold mb-1">Quoter Error</div>
-                            <div className="text-red-300 text-xs mb-2 break-words">{quoteError.message}</div>
-                            <div className="text-yellow-400 text-xs mt-2">
-                                💡 Possible causes:
-                                <ul className="list-disc list-inside mt-1 space-y-0.5">
-                                    <li>Pool has no liquidity (need to add liquidity first)</li>
-                                    <li>Trade amount too large, exceeds available liquidity</li>
-                                    <li>Pool not properly initialized</li>
-                                </ul>
+                        <div className="mt-2 px-4 py-2 bg-red-900/20 rounded-lg border border-red-700/50">
+                            <div className="text-red-400 text-xs">
+                                {RPC_UNAVAILABLE_MESSAGE}
                             </div>
                         </div>
                     )}
