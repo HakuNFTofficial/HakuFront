@@ -6,9 +6,9 @@ interface ImportMetaEnv {
     readonly MODE: string
     readonly DEV: boolean
     readonly PROD: boolean
+    readonly VITE_WALLETCONNECT_PROJECT_ID?: string
 }
 
 interface ImportMeta {
     readonly env: ImportMetaEnv
 }
-
