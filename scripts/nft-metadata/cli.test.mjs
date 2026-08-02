@@ -97,3 +97,37 @@ test('public validation rejects a redirected response', async () => {
     fetchImpl: async () => new Response(null, { status: 301 }),
   }), /status 200/)
 })
+
+test('public validation uses bounded concurrency', async () => {
+  const bytes = Buffer.from('{}')
+  const entries = Array.from({ length: 3 }, (_, index) => ({
+    tokenUrl: String(index + 1),
+    metadata: { fileName: `${index + 1}.json`, sha256: sha256(bytes) },
+    image: { fileName: `${index + 1}.png`, sha256: sha256(bytes) },
+  }))
+  let active = 0
+  let maxActive = 0
+  const fetchImpl = async (url) => {
+    active += 1
+    maxActive = Math.max(maxActive, active)
+    await new Promise((resolve) => setTimeout(resolve, 5))
+    active -= 1
+    const isMetadata = String(url).endsWith('.json')
+    return new Response(bytes, {
+      status: 200,
+      headers: {
+        'access-control-allow-origin': '*',
+        'cache-control': 'public, max-age=31536000, immutable',
+        'content-type': isMetadata ? 'application/json' : 'image/png',
+      },
+    })
+  }
+  const result = await validatePublicRelease({
+    manifest: { entries },
+    publicOrigin: 'https://www.hakupump.club',
+    fetchImpl,
+    concurrency: 2,
+  })
+  assert.equal(result.checkedFiles, 6)
+  assert.equal(maxActive, 2)
+})

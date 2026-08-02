@@ -55,25 +55,38 @@ async function validatePublicFile({ url, expectedSha256, expectedContentType, fe
   if (sha256(bytes) !== expectedSha256) throw new Error(`${url} failed SHA-256 validation`)
 }
 
-export async function validatePublicRelease({ manifest, publicOrigin, fetchImpl = fetch }) {
-  let checkedFiles = 0
-  for (const entry of manifest.entries) {
-    await validatePublicFile({
+export async function validatePublicRelease({
+  manifest,
+  publicOrigin,
+  fetchImpl = fetch,
+  concurrency = 12,
+}) {
+  if (!Number.isInteger(concurrency) || concurrency < 1) {
+    throw new Error(`Invalid public validation concurrency: ${concurrency}`)
+  }
+  const files = manifest.entries.flatMap((entry) => [
+    {
       url: publicUrl(publicOrigin, `/nft-metadata/v2/${entry.metadata.fileName}`),
       expectedSha256: entry.metadata.sha256,
       expectedContentType: 'application/json',
-      fetchImpl,
-    })
-    checkedFiles += 1
-    await validatePublicFile({
+    },
+    {
       url: publicUrl(publicOrigin, `/nft-media/v2/${entry.image.fileName}`),
       expectedSha256: entry.image.sha256,
       expectedContentType: 'image/png',
-      fetchImpl,
-    })
-    checkedFiles += 1
+    },
+  ])
+  let cursor = 0
+  async function worker() {
+    while (cursor < files.length) {
+      const file = files[cursor]
+      cursor += 1
+      await validatePublicFile({ ...file, fetchImpl })
+    }
   }
-  return { checkedFiles }
+  const workerCount = Math.min(concurrency, files.length)
+  await Promise.all(Array.from({ length: workerCount }, () => worker()))
+  return { checkedFiles: files.length }
 }
 
 export async function main(argv = process.argv.slice(2)) {
