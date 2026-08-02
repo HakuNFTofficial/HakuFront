@@ -2,6 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   EXPECTED_OLD_IMPLEMENTATION,
+  EXPECTED_NEXT_TOKEN_ID,
   EXPECTED_OWNER,
   HAKUTOKEN_PROXY,
   HUKUNFT_PROXY,
@@ -23,6 +24,7 @@ test('production HukuNFT upgrade constants are exact', () => {
   assert.equal(HAKUTOKEN_PROXY, '0x19c02CC2118Afe3CB59bb2f777d1a1124c7A6C12')
   assert.equal(METADATA_BASE_URI, 'https://www.hakupump.club/nft-metadata/v2/')
   assert.equal(IMPLEMENTATION_SLOT, '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc')
+  assert.equal(EXPECTED_NEXT_TOKEN_ID, 40n)
 })
 
 test('upgrade calldata decodes to the reviewed implementation and initializer URI', () => {

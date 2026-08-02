@@ -14,7 +14,8 @@ export const HAKUTOKEN_PROXY = '0x19c02CC2118Afe3CB59bb2f777d1a1124c7A6C12'
 export const METADATA_BASE_URI = 'https://www.hakupump.club/nft-metadata/v2/'
 export const IMPLEMENTATION_SLOT = '0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc'
 export const EXPECTED_BASE_CID = 'QmeqYrSGKCaKzcLGuJT3N12HFH4ws47Lqbs18hSiuGEZGn'
-export const EXPECTED_NEXT_TOKEN_ID = 39n
+// Verified on 2026-08-02 after Token #39 had been minted and burned.
+export const EXPECTED_NEXT_TOKEN_ID = 40n
 export const REFERENCE_TOKEN_ID = 38n
 export const REFERENCE_TOKEN_OWNER = '0x2FBF4aD90BfE460A0eD12ac8ebF969a1c9462E8c'
 export const REFERENCE_IPFS_URI = `ipfs://${EXPECTED_BASE_CID}/740.json`
