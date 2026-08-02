@@ -16,6 +16,11 @@ describe('RPC failure UX', () => {
         expect(walletSource).toContain('error: nativeBalanceError')
         expect(walletSource).toContain('getBalanceDisplayState')
         expect(walletSource).toContain('nativeBalanceDisplay.label')
+        expect(swapSource).toContain('error: sttBalanceError')
+        expect(swapSource).toContain('sttBalanceDisplay.label')
+        expect(swapSource).not.toContain(
+            "sttBalance ? parseFloat(formatEther(sttBalance.value)).toFixed(4) : '0.0000'",
+        )
         expect(swapSource).toContain('RPC_UNAVAILABLE_MESSAGE')
         expect(swapSource).not.toContain('Error: {poolError.message}')
     })

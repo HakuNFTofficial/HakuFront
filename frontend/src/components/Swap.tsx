@@ -5,6 +5,7 @@ import { CONTRACTS, POOL_CONFIG, SWAP_CONFIG, SWAP_EXECUTOR_ABI, ERC20_ABI, POOL
 import { useWalletChainId } from '../hooks/useWalletChainId'
 import { REQUIRED_CHAIN_ID, getChainName } from '../config/chain'
 import { BALANCE_REFETCH_MS, POOL_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
+import { getBalanceDisplayState, RPC_UNAVAILABLE_MESSAGE } from '../utils/rpcDisplay'
 
 export function Swap() {
     const { address } = useAccount()
@@ -35,7 +36,12 @@ export function Swap() {
     })
 
     // Query USDC balance (native token)
-    const { data: sttBalance, isLoading: isLoadingSTT, refetch: refetchSttBalance } = useBalance({
+    const {
+        data: sttBalance,
+        isLoading: isLoadingSTT,
+        error: sttBalanceError,
+        refetch: refetchSttBalance,
+    } = useBalance({
         address: address,
         query: {
             enabled: !!address,
@@ -66,6 +72,11 @@ export function Swap() {
 
     const tokenASymbol = 'USDC'
     const tokenADecimals = 18 // USDC is native token, always 18 decimals
+    const sttBalanceDisplay = getBalanceDisplayState(
+        sttBalance ? formatEther(sttBalance.value) : undefined,
+        isLoadingSTT,
+        sttBalanceError,
+    )
     const tokenPay = mode === 'buy'
         ? { address: CONTRACTS.TOKEN_A, symbol: tokenASymbol }
         : { address: CONTRACTS.TOKEN_B, symbol: (tokenBName as string) || 'TokenB' }
@@ -139,6 +150,12 @@ export function Swap() {
             refetchIntervalInBackground: false,
         }
     })
+
+    useEffect(() => {
+        if (poolError && import.meta.env.DEV) {
+            console.error('[Swap] Pool RPC read failed', poolError)
+        }
+    }, [poolError])
 
     // Query pool liquidity
     const { data: liquidityBytes, refetch: refetchPoolLiquidity } = useReadContract({
@@ -631,11 +648,20 @@ export function Swap() {
                                     </div>
                                     <div className="text-white text-sm font-medium">USDC</div>
                                 </div>
-                                <div className="text-white text-sm font-semibold">
-                                    {isLoadingSTT ? (
+                                <div className="text-right">
+                                    {sttBalanceDisplay.kind === 'loading' ? (
                                         <span className="loading loading-spinner loading-xs"></span>
                                     ) : (
-                                        sttBalance ? parseFloat(formatEther(sttBalance.value)).toFixed(4) : '0.0000'
+                                        <>
+                                            <div className="text-white text-sm font-semibold">
+                                                {sttBalanceDisplay.value}
+                                            </div>
+                                            {sttBalanceDisplay.kind === 'unavailable' && (
+                                                <div className="text-red-300 text-[10px] mt-0.5">
+                                                    {sttBalanceDisplay.label}
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </>
@@ -856,7 +882,9 @@ export function Swap() {
                     )}
                     {poolError && (
                         <div className="mt-2 px-4 py-2 bg-red-900/20 rounded-lg border border-red-700/50">
-                            <div className="text-red-400 text-xs">Error: {poolError.message}</div>
+                            <div className="text-red-400 text-xs">
+                                {RPC_UNAVAILABLE_MESSAGE}
+                            </div>
                         </div>
                     )}
                     {!poolSlot0 && !isLoadingPool && !poolError && amount && (
