@@ -4,6 +4,7 @@ import {
   encodeFunctionData,
   getAddress,
   isAddress,
+  keccak256,
 } from 'viem'
 
 export const ARC_CHAIN_ID = 5_042_002
@@ -77,6 +78,45 @@ export function decodeUpgradeCalldata(calldata) {
 export function calldataSha256(calldata) {
   if (!/^0x(?:[0-9a-fA-F]{2})+$/.test(calldata)) throw new Error('Calldata must be non-empty hex bytes')
   return createHash('sha256').update(Buffer.from(calldata.slice(2), 'hex')).digest('hex')
+}
+
+export function publicSnapshotSha256(snapshot) {
+  if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) {
+    throw new Error('Public snapshot must be an object')
+  }
+  return createHash('sha256').update(JSON.stringify(snapshot)).digest('hex')
+}
+
+export function runtimeBytecodeHash(bytecode) {
+  if (!/^0x(?:[0-9a-fA-F]{2})+$/.test(bytecode)) {
+    throw new Error('HukuNFT runtime bytecode must be non-empty hex bytes')
+  }
+  return keccak256(bytecode)
+}
+
+function maskImmutableReferences(bytecode, immutableReferences = {}) {
+  runtimeBytecodeHash(bytecode)
+  const bytes = Buffer.from(bytecode.slice(2), 'hex')
+  for (const references of Object.values(immutableReferences)) {
+    if (!Array.isArray(references)) throw new Error('Invalid HukuNFT immutable references')
+    for (const reference of references) {
+      const { start, length } = reference ?? {}
+      if (!Number.isInteger(start) || !Number.isInteger(length) || start < 0 || length <= 0 || start + length > bytes.length) {
+        throw new Error('Invalid HukuNFT immutable reference range')
+      }
+      bytes.fill(0, start, start + length)
+    }
+  }
+  return `0x${bytes.toString('hex')}`
+}
+
+export function assertRuntimeBytecode(actualBytecode, expectedBytecode, immutableReferences = {}) {
+  const actualHash = runtimeBytecodeHash(maskImmutableReferences(actualBytecode, immutableReferences))
+  const expectedHash = runtimeBytecodeHash(maskImmutableReferences(expectedBytecode, immutableReferences))
+  if (actualHash !== expectedHash) {
+    throw new Error(`HukuNFT runtime bytecode hash mismatch: expected ${expectedHash}, received ${actualHash}`)
+  }
+  return actualHash
 }
 
 export function implementationFromStorageValue(storageValue) {

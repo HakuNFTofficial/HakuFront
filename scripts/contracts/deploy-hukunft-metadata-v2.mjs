@@ -19,12 +19,15 @@ import {
   HUKUNFT_PROXY,
   IMPLEMENTATION_SLOT,
   assertBaselineSnapshot,
+  assertRuntimeBytecode,
   assertUpgradeConfirmations,
   assertUpgradedSnapshot,
   buildUpgradeCalldata,
   calldataSha256,
   decodeUpgradeCalldata,
+  publicSnapshotSha256,
   readProxySnapshot,
+  runtimeBytecodeHash,
 } from './hukunft-metadata-v2-lib.mjs'
 
 const arcTestnet = defineChain({
@@ -65,9 +68,21 @@ function requiredImplementation(value) {
   return getAddress(value)
 }
 
-async function assertImplementation(publicClient, implementation) {
+function readHukuNFTArtifact() {
+  const artifact = JSON.parse(readFileSync(resolve('out/HukuNFT.sol/HukuNFT.json'), 'utf8'))
+  if (!artifact.bytecode?.object?.startsWith('0x')) {
+    throw new Error('HukuNFT deployment bytecode is missing; run forge build')
+  }
+  if (!artifact.deployedBytecode?.object?.startsWith('0x')) {
+    throw new Error('HukuNFT runtime bytecode is missing; run forge build')
+  }
+  return artifact
+}
+
+async function assertImplementation(publicClient, implementation, expectedRuntimeBytecode, immutableReferences) {
   const code = await publicClient.getCode({ address: implementation })
   if (!code || code === '0x') throw new Error(`New implementation has no code: ${implementation}`)
+  const runtimeHash = assertRuntimeBytecode(code, expectedRuntimeBytecode, immutableReferences)
   const uuid = await publicClient.readContract({
     address: implementation,
     abi: HUKUNFT_ABI,
@@ -76,6 +91,7 @@ async function assertImplementation(publicClient, implementation) {
   if (uuid.toLowerCase() !== IMPLEMENTATION_SLOT) {
     throw new Error(`New implementation proxiableUUID mismatch: ${uuid}`)
   }
+  return runtimeHash
 }
 
 async function snapshotCommand(env) {
@@ -89,8 +105,7 @@ async function deployCommand(env) {
   const { account, publicClient, walletClient } = clients(env, true)
   const baseline = await readProxySnapshot(publicClient)
   assertBaselineSnapshot(baseline, account.address)
-  const artifact = JSON.parse(readFileSync(resolve('out/HukuNFT.sol/HukuNFT.json'), 'utf8'))
-  if (!artifact.bytecode?.object?.startsWith('0x')) throw new Error('HukuNFT deployment bytecode is missing; run forge build')
+  const artifact = readHukuNFTArtifact()
   const transactionHash = await walletClient.deployContract({
     account,
     abi: artifact.abi,
@@ -98,12 +113,18 @@ async function deployCommand(env) {
   })
   const receipt = await publicClient.waitForTransactionReceipt({ hash: transactionHash })
   if (receipt.status !== 'success' || !receipt.contractAddress) throw new Error(`Implementation deployment failed: ${transactionHash}`)
-  await assertImplementation(publicClient, receipt.contractAddress)
+  const runtimeBytecodeHash = await assertImplementation(
+    publicClient,
+    receipt.contractAddress,
+    artifact.deployedBytecode.object,
+    artifact.deployedBytecode.immutableReferences,
+  )
   const result = {
     action: 'deploy-implementation-only',
     implementation: receipt.contractAddress,
     transactionHash,
     blockNumber: receipt.blockNumber.toString(),
+    runtimeBytecodeHash,
     proxyTouched: false,
   }
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
@@ -114,18 +135,40 @@ async function prepareUpgradeCommand(env, implementation) {
   const { account, publicClient } = clients(env, true)
   const baseline = await readProxySnapshot(publicClient)
   assertBaselineSnapshot(baseline, account.address)
-  await assertImplementation(publicClient, implementation)
+  const artifact = readHukuNFTArtifact()
+  const implementationRuntimeBytecodeHash = await assertImplementation(
+    publicClient,
+    implementation,
+    artifact.deployedBytecode.object,
+    artifact.deployedBytecode.immutableReferences,
+  )
   const calldata = buildUpgradeCalldata(implementation)
+  const [latestBlock, estimatedGas, ownerBalance] = await Promise.all([
+    publicClient.getBlockNumber(),
+    publicClient.estimateGas({
+      account: account.address,
+      to: HUKUNFT_PROXY,
+      data: calldata,
+      value: 0n,
+    }),
+    publicClient.getBalance({ address: account.address }),
+  ])
   const result = {
     action: 'prepare-upgrade',
     chainId: baseline.chainId,
+    latestBlock: latestBlock.toString(),
     signer: account.address,
+    ownerBalance: ownerBalance.toString(),
+    estimatedGas: estimatedGas.toString(),
     to: HUKUNFT_PROXY,
     value: '0',
     calldata,
     calldataSha256: calldataSha256(calldata),
     decoded: decodeUpgradeCalldata(calldata),
     currentImplementation: baseline.implementation,
+    preUpgradeSnapshotSha256: publicSnapshotSha256(baseline),
+    implementationRuntimeBytecodeHash,
+    expectedRuntimeBytecodeHash: runtimeBytecodeHash(artifact.deployedBytecode.object),
   }
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`)
   return result
@@ -137,7 +180,13 @@ async function upgradeCommand(env, implementation) {
   assertUpgradeConfirmations({ env, newImplementation: implementation, calldata })
   const baseline = await readProxySnapshot(publicClient)
   assertBaselineSnapshot(baseline, account.address)
-  await assertImplementation(publicClient, implementation)
+  const artifact = readHukuNFTArtifact()
+  await assertImplementation(
+    publicClient,
+    implementation,
+    artifact.deployedBytecode.object,
+    artifact.deployedBytecode.immutableReferences,
+  )
 
   const transactionHash = await walletClient.sendTransaction({
     account,

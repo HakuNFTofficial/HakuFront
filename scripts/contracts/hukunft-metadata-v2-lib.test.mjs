@@ -8,11 +8,14 @@ import {
   HUKUNFT_PROXY,
   IMPLEMENTATION_SLOT,
   METADATA_BASE_URI,
+  assertRuntimeBytecode,
   assertUpgradeConfirmations,
   buildUpgradeCalldata,
   calldataSha256,
   decodeUpgradeCalldata,
   implementationFromStorageValue,
+  publicSnapshotSha256,
+  runtimeBytecodeHash,
 } from './hukunft-metadata-v2-lib.mjs'
 
 const NEW_IMPLEMENTATION = '0x1111111111111111111111111111111111111111'
@@ -43,6 +46,28 @@ test('implementation address is decoded from the ERC-1967 slot', () => {
   )
 })
 
+test('runtime bytecode hash is deterministic and rejects empty code', () => {
+  assert.equal(
+    runtimeBytecodeHash('0x6000'),
+    '0x07ad118d6cc8642c86c03827f276d8b791a65e5c99a3845faf186be720a1455d',
+  )
+  assert.throws(() => runtimeBytecodeHash('0x'), /runtime bytecode/)
+  assert.equal(assertRuntimeBytecode('0x6000', '0x6000'), runtimeBytecodeHash('0x6000'))
+  assert.throws(() => assertRuntimeBytecode('0x6001', '0x6000'), /hash mismatch/)
+})
+
+test('runtime bytecode comparison masks only compiler-declared immutable ranges', () => {
+  const immutableReferences = { '2465': [{ start: 1, length: 1 }] }
+  assert.equal(
+    assertRuntimeBytecode('0x6011ff', '0x6000ff', immutableReferences),
+    runtimeBytecodeHash('0x6000ff'),
+  )
+  assert.throws(
+    () => assertRuntimeBytecode('0x6011fe', '0x6000ff', immutableReferences),
+    /hash mismatch/,
+  )
+})
+
 test('all three upgrade confirmations must match exactly', () => {
   const calldata = buildUpgradeCalldata(NEW_IMPLEMENTATION)
   const sha = calldataSha256(calldata)
@@ -64,4 +89,14 @@ test('all three upgrade confirmations must match exactly', () => {
     newImplementation: NEW_IMPLEMENTATION,
     calldata,
   }), /CONFIRM_CALLDATA_SHA256/)
+})
+
+test('public snapshot hash is deterministic and changes with state', () => {
+  const snapshot = { chainId: 5_042_002, implementation: EXPECTED_OLD_IMPLEMENTATION }
+  assert.equal(publicSnapshotSha256(snapshot), publicSnapshotSha256(snapshot))
+  assert.match(publicSnapshotSha256(snapshot), /^[0-9a-f]{64}$/)
+  assert.notEqual(
+    publicSnapshotSha256(snapshot),
+    publicSnapshotSha256({ ...snapshot, chainId: 1 }),
+  )
 })
