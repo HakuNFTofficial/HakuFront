@@ -1,0 +1,80 @@
+{
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "soft pink"
+    },
+    {
+      "trait_type": "hair3",
+      "value": "PigTail"
+    },
+    {
+      "trait_type": "clothes2",
+      "value": "MclonthingM1"
+    },
+    {
+      "trait_type": "body",
+      "value": "DustyCoral"
+    },
+    {
+      "trait_type": "tattoo",
+      "value": "blank"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "Gum"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "Angry"
+    },
+    {
+      "trait_type": "glassesleft",
+      "value": "glasses002"
+    },
+    {
+      "trait_type": "nose",
+      "value": "DustyCoral"
+    },
+    {
+      "trait_type": "hair2",
+      "value": "PigTail"
+    },
+    {
+      "trait_type": "glassesright",
+      "value": "glasses002"
+    },
+    {
+      "trait_type": "ear",
+      "value": "DustyCoral"
+    },
+    {
+      "trait_type": "clothes1",
+      "value": "MclonthingM1"
+    },
+    {
+      "trait_type": "hair1",
+      "value": "PigTail"
+    },
+    {
+      "trait_type": "gear",
+      "value": "Square"
+    },
+    {
+      "trait_type": "gender",
+      "value": "male"
+    }
+  ],
+  "compiler": "HashLips Art Engine - modified version",
+  "date": 1768824845069,
+  "description": "HakuNFT collectible from the Haku ecosystem.",
+  "dna": "97cd0fe6421136f99ffaca219d1fd77152000e29",
+  "edition": 590,
+  "image": "https://www.hakupump.club/nft-media/v2/590.png",
+  "name": "Haku #590",
+  "external_url": "https://www.hakupump.club/",
+  "properties": {
+    "metadata_version": "v2",
+    "image_ipfs": "ipfs://bafybeifxrzmx52b6rbvgrga72rrnj5zeegzttewxyw7ynev7emrdjgouqm"
+  }
+}

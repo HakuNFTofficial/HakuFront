@@ -1,0 +1,80 @@
+{
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "Space"
+    },
+    {
+      "trait_type": "hair3",
+      "value": "LongHair"
+    },
+    {
+      "trait_type": "clothes2",
+      "value": "MclonthingJ1"
+    },
+    {
+      "trait_type": "body",
+      "value": "DustyRose"
+    },
+    {
+      "trait_type": "tattoo",
+      "value": "blank"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "Gum"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "Calm1"
+    },
+    {
+      "trait_type": "glassesleft",
+      "value": "glasses006"
+    },
+    {
+      "trait_type": "nose",
+      "value": "DustyRose"
+    },
+    {
+      "trait_type": "hair2",
+      "value": "LongHair"
+    },
+    {
+      "trait_type": "glassesright",
+      "value": "glasses006"
+    },
+    {
+      "trait_type": "ear",
+      "value": "DustyRose"
+    },
+    {
+      "trait_type": "clothes1",
+      "value": "MclonthingJ1"
+    },
+    {
+      "trait_type": "hair1",
+      "value": "LongHair"
+    },
+    {
+      "trait_type": "gear",
+      "value": "Monster"
+    },
+    {
+      "trait_type": "gender",
+      "value": "male"
+    }
+  ],
+  "compiler": "HashLips Art Engine - modified version",
+  "date": 1768824906762,
+  "description": "HakuNFT collectible from the Haku ecosystem.",
+  "dna": "aba5e74d7d48d30370215d66b4783fce1dd62518",
+  "edition": 793,
+  "image": "https://www.hakupump.club/nft-media/v2/793.png",
+  "name": "Haku #793",
+  "external_url": "https://www.hakupump.club/",
+  "properties": {
+    "metadata_version": "v2",
+    "image_ipfs": "ipfs://bafybeigujmznf32zrfpgukvkzeuraxd34gy63r5x65pn3qrpjofkh2lrju"
+  }
+}

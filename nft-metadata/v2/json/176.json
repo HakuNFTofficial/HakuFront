@@ -1,0 +1,124 @@
+{
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "slate blue"
+    },
+    {
+      "trait_type": "clothes2",
+      "value": "FclothingL"
+    },
+    {
+      "trait_type": "hair3",
+      "value": "FemaleHairP1"
+    },
+    {
+      "trait_type": "body",
+      "value": "PeachPink"
+    },
+    {
+      "trait_type": "tattoo",
+      "value": "tattoo01"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "Cool"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "Blue"
+    },
+    {
+      "trait_type": "glassesleft",
+      "value": "glasses002"
+    },
+    {
+      "trait_type": "nose",
+      "value": "PeachPink"
+    },
+    {
+      "trait_type": "glassesright",
+      "value": "glasses002"
+    },
+    {
+      "trait_type": "clothes1",
+      "value": "FclothingL"
+    },
+    {
+      "trait_type": "background",
+      "value": "Space"
+    },
+    {
+      "trait_type": "clothes2",
+      "value": "FclothingH"
+    },
+    {
+      "trait_type": "hair3",
+      "value": "FemaleHairC1"
+    },
+    {
+      "trait_type": "body",
+      "value": "BlushPink"
+    },
+    {
+      "trait_type": "tattoo",
+      "value": "tattoo02"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "Happy"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "Angry"
+    },
+    {
+      "trait_type": "glassesleft",
+      "value": "glasses008"
+    },
+    {
+      "trait_type": "nose",
+      "value": "BlushPink"
+    },
+    {
+      "trait_type": "glassesright",
+      "value": "glasses008"
+    },
+    {
+      "trait_type": "clothes1",
+      "value": "FclothingH"
+    },
+    {
+      "trait_type": "hair2",
+      "value": "FemaleHairC1"
+    },
+    {
+      "trait_type": "ear",
+      "value": "BlushPink"
+    },
+    {
+      "trait_type": "gear",
+      "value": "Square"
+    },
+    {
+      "trait_type": "hair1",
+      "value": "FemaleHairC1"
+    },
+    {
+      "trait_type": "gender",
+      "value": "female"
+    }
+  ],
+  "compiler": "HashLips Art Engine - modified version",
+  "date": 1768824717331,
+  "description": "HakuNFT collectible from the Haku ecosystem.",
+  "dna": "30cc118d2abded997c6559cbe71e73ed3c79949d",
+  "edition": 176,
+  "image": "https://www.hakupump.club/nft-media/v2/176.png",
+  "name": "Haku #176",
+  "external_url": "https://www.hakupump.club/",
+  "properties": {
+    "metadata_version": "v2",
+    "image_ipfs": "ipfs://bafybeiezq5gg2tdqpavs5p7mxvz7qap4adgzfbef6mgf7trnza63dpzawa"
+  }
+}

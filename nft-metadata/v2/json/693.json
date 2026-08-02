@@ -1,0 +1,80 @@
+{
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "Purple"
+    },
+    {
+      "trait_type": "hair3",
+      "value": "Crown_nohoodie"
+    },
+    {
+      "trait_type": "clothes2",
+      "value": "MclonthingH1"
+    },
+    {
+      "trait_type": "body",
+      "value": "PeachPink"
+    },
+    {
+      "trait_type": "tattoo",
+      "value": "tattoo01"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "Basic"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "Angry"
+    },
+    {
+      "trait_type": "glassesleft",
+      "value": "MaskL"
+    },
+    {
+      "trait_type": "nose",
+      "value": "PeachPink"
+    },
+    {
+      "trait_type": "hair2",
+      "value": "Crown_nohoodie"
+    },
+    {
+      "trait_type": "glassesright",
+      "value": "MaskR"
+    },
+    {
+      "trait_type": "ear",
+      "value": "PeachPink"
+    },
+    {
+      "trait_type": "clothes1",
+      "value": "MclonthingH1"
+    },
+    {
+      "trait_type": "hair1",
+      "value": "Crown_nohoodie"
+    },
+    {
+      "trait_type": "gear",
+      "value": "Monster"
+    },
+    {
+      "trait_type": "gender",
+      "value": "male"
+    }
+  ],
+  "compiler": "HashLips Art Engine - modified version",
+  "date": 1768824877654,
+  "description": "HakuNFT collectible from the Haku ecosystem.",
+  "dna": "ba193430cd95eed1294669a707a4731d1e4a53d9",
+  "edition": 693,
+  "image": "https://www.hakupump.club/nft-media/v2/693.png",
+  "name": "Haku #693",
+  "external_url": "https://www.hakupump.club/",
+  "properties": {
+    "metadata_version": "v2",
+    "image_ipfs": "ipfs://bafybeihtevxmqaafbw3bslqnlvaj2iwulaa226n7d74gnze3xumfwnhqky"
+  }
+}

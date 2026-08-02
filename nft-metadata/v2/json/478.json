@@ -1,0 +1,80 @@
+{
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "cream"
+    },
+    {
+      "trait_type": "clothes2",
+      "value": "FclothingH"
+    },
+    {
+      "trait_type": "hair3",
+      "value": "FemaleHairK1"
+    },
+    {
+      "trait_type": "body",
+      "value": "DustyRose"
+    },
+    {
+      "trait_type": "tattoo",
+      "value": "tattoo04"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "Smile"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "Angry"
+    },
+    {
+      "trait_type": "glassesleft",
+      "value": "MaskL"
+    },
+    {
+      "trait_type": "nose",
+      "value": "DustyRose"
+    },
+    {
+      "trait_type": "glassesright",
+      "value": "MaskR"
+    },
+    {
+      "trait_type": "clothes1",
+      "value": "FclothingH"
+    },
+    {
+      "trait_type": "hair2",
+      "value": "FemaleHairK1"
+    },
+    {
+      "trait_type": "ear",
+      "value": "DustyRose"
+    },
+    {
+      "trait_type": "gear",
+      "value": "Square"
+    },
+    {
+      "trait_type": "hair1",
+      "value": "FemaleHairK1"
+    },
+    {
+      "trait_type": "gender",
+      "value": "female"
+    }
+  ],
+  "compiler": "HashLips Art Engine - modified version",
+  "date": 1768824812579,
+  "description": "HakuNFT collectible from the Haku ecosystem.",
+  "dna": "96a5103ee3a17559405ee83b763071a42f9a50ad",
+  "edition": 478,
+  "image": "https://www.hakupump.club/nft-media/v2/478.png",
+  "name": "Haku #478",
+  "external_url": "https://www.hakupump.club/",
+  "properties": {
+    "metadata_version": "v2",
+    "image_ipfs": "ipfs://bafybeiddo5msqyswlnw7vzhdvbikxpbwzm6guztiqbppdekhtqzt7mcfai"
+  }
+}

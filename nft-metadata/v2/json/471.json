@@ -1,0 +1,80 @@
+{
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "Space"
+    },
+    {
+      "trait_type": "clothes2",
+      "value": "FclothingM"
+    },
+    {
+      "trait_type": "hair3",
+      "value": "FemaleHairL1_nohoodie"
+    },
+    {
+      "trait_type": "body",
+      "value": "BlushPink"
+    },
+    {
+      "trait_type": "tattoo",
+      "value": "tattoo01"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "Pleased"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "Angry"
+    },
+    {
+      "trait_type": "glassesleft",
+      "value": "glasses008"
+    },
+    {
+      "trait_type": "nose",
+      "value": "BlushPink"
+    },
+    {
+      "trait_type": "glassesright",
+      "value": "glasses008"
+    },
+    {
+      "trait_type": "clothes1",
+      "value": "FclothingM"
+    },
+    {
+      "trait_type": "hair2",
+      "value": "FemaleHairL1_nohoodie"
+    },
+    {
+      "trait_type": "ear",
+      "value": "BlushPink"
+    },
+    {
+      "trait_type": "gear",
+      "value": "Square"
+    },
+    {
+      "trait_type": "hair1",
+      "value": "FemaleHairL1_nohoodie"
+    },
+    {
+      "trait_type": "gender",
+      "value": "female"
+    }
+  ],
+  "compiler": "HashLips Art Engine - modified version",
+  "date": 1768824812125,
+  "description": "HakuNFT collectible from the Haku ecosystem.",
+  "dna": "4fd7fe7e60724e6a7fe37c38633ffccabc8620f0",
+  "edition": 471,
+  "image": "https://www.hakupump.club/nft-media/v2/471.png",
+  "name": "Haku #471",
+  "external_url": "https://www.hakupump.club/",
+  "properties": {
+    "metadata_version": "v2",
+    "image_ipfs": "ipfs://bafybeia6ey6qjzyyixcoelxkwmnfntu4e33ma2kryd6tibd5qpa5op57pi"
+  }
+}

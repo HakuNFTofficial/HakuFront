@@ -1,0 +1,80 @@
+{
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "Blank"
+    },
+    {
+      "trait_type": "hair3",
+      "value": "WizardHat_nohoodie"
+    },
+    {
+      "trait_type": "clothes2",
+      "value": "MclonthingJ1"
+    },
+    {
+      "trait_type": "body",
+      "value": "PeachPink"
+    },
+    {
+      "trait_type": "tattoo",
+      "value": "tattoo03"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "Smile"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "Calm2"
+    },
+    {
+      "trait_type": "glassesleft",
+      "value": "glasses008"
+    },
+    {
+      "trait_type": "nose",
+      "value": "PeachPink"
+    },
+    {
+      "trait_type": "hair2",
+      "value": "WizardHat_nohoodie"
+    },
+    {
+      "trait_type": "glassesright",
+      "value": "glasses008"
+    },
+    {
+      "trait_type": "ear",
+      "value": "PeachPink"
+    },
+    {
+      "trait_type": "clothes1",
+      "value": "MclonthingJ1"
+    },
+    {
+      "trait_type": "hair1",
+      "value": "WizardHat_nohoodie"
+    },
+    {
+      "trait_type": "gear",
+      "value": "Square"
+    },
+    {
+      "trait_type": "gender",
+      "value": "male"
+    }
+  ],
+  "compiler": "HashLips Art Engine - modified version",
+  "date": 1768824850929,
+  "description": "HakuNFT collectible from the Haku ecosystem.",
+  "dna": "34d0a4370039f167569574031c766badef951886",
+  "edition": 602,
+  "image": "https://www.hakupump.club/nft-media/v2/602.png",
+  "name": "Haku #602",
+  "external_url": "https://www.hakupump.club/",
+  "properties": {
+    "metadata_version": "v2",
+    "image_ipfs": "ipfs://bafybeidm6dwso6ugowp6nmv5e4ns6ndkdtqeelfewsaonqg57muc7zj6uu"
+  }
+}

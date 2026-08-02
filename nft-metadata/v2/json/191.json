@@ -1,0 +1,80 @@
+{
+  "attributes": [
+    {
+      "trait_type": "background",
+      "value": "slate blue"
+    },
+    {
+      "trait_type": "clothes2",
+      "value": "FclothingG"
+    },
+    {
+      "trait_type": "hair3",
+      "value": "FemaleHairC1"
+    },
+    {
+      "trait_type": "body",
+      "value": "DustyCoral"
+    },
+    {
+      "trait_type": "tattoo",
+      "value": "tattoo03"
+    },
+    {
+      "trait_type": "mouth",
+      "value": "Lollipop"
+    },
+    {
+      "trait_type": "eyes",
+      "value": "CLosed"
+    },
+    {
+      "trait_type": "glassesleft",
+      "value": "blank"
+    },
+    {
+      "trait_type": "nose",
+      "value": "DustyCoral"
+    },
+    {
+      "trait_type": "glassesright",
+      "value": "blank"
+    },
+    {
+      "trait_type": "clothes1",
+      "value": "FclothingG"
+    },
+    {
+      "trait_type": "hair2",
+      "value": "FemaleHairC1"
+    },
+    {
+      "trait_type": "ear",
+      "value": "DustyCoral"
+    },
+    {
+      "trait_type": "gear",
+      "value": "Square"
+    },
+    {
+      "trait_type": "hair1",
+      "value": "FemaleHairC1"
+    },
+    {
+      "trait_type": "gender",
+      "value": "female"
+    }
+  ],
+  "compiler": "HashLips Art Engine - modified version",
+  "date": 1768824724260,
+  "description": "HakuNFT collectible from the Haku ecosystem.",
+  "dna": "3496639563e5c92e46a2fa71084189afc43b80ca",
+  "edition": 191,
+  "image": "https://www.hakupump.club/nft-media/v2/191.png",
+  "name": "Haku #191",
+  "external_url": "https://www.hakupump.club/",
+  "properties": {
+    "metadata_version": "v2",
+    "image_ipfs": "ipfs://bafybeig6b5wx6emu6457ea2mgo5lbunyjizcoanutosbna3jdwtwo44hw4"
+  }
+}

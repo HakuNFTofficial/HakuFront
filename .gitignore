@@ -9,3 +9,4 @@ frontend/.env.local
 frontend/.env.*.local
 cache/
 out/
+nft-metadata/v2/images/
