@@ -1,3 +1,7 @@
+// @vitest-environment node
+
+import { readFileSync } from 'node:fs'
+
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -67,5 +71,17 @@ describe('wagmi wallet configuration', () => {
         )
         expect(mocks.injected).toHaveBeenCalledTimes(1)
         expect(mocks.walletConnect).not.toHaveBeenCalled()
+    })
+})
+
+describe('wagmi transport', () => {
+    test('uses the same-origin RPC gateway for browser reads', () => {
+        const source = readFileSync(new URL('./wagmi.ts', import.meta.url), 'utf8')
+
+        expect(source).toContain("export const RPC_PROXY_URL = '/api/rpc'")
+        expect(source).toContain('http(RPC_PROXY_URL')
+        expect(source).toContain('retryCount: 0')
+        expect(source).toContain('timeout: 40_000')
+        expect(source).not.toContain("http('https://rpc.testnet.arc.network')")
     })
 })

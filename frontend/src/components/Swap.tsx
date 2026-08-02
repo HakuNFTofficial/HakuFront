@@ -1,9 +1,11 @@
-import { useState, useMemo, useEffect } from 'react'
-import { useFeeData, useAccount, useWriteContract, useReadContract, useBalance } from 'wagmi'
+import { useState, useMemo, useEffect, useRef } from 'react'
+import { useFeeData, useAccount, useWriteContract, useReadContract, useBalance, useWaitForTransactionReceipt } from 'wagmi'
 import { parseUnits, formatUnits, keccak256, encodeAbiParameters, encodePacked, formatEther } from 'viem'
 import { CONTRACTS, POOL_CONFIG, SWAP_CONFIG, SWAP_EXECUTOR_ABI, ERC20_ABI, POOL_MANAGER_ABI, QUOTER_ABI } from '../config/contracts'
 import { useWalletChainId } from '../hooks/useWalletChainId'
 import { REQUIRED_CHAIN_ID, getChainName } from '../config/chain'
+import { BALANCE_REFETCH_MS, POOL_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
+import { getBalanceDisplayState, RPC_UNAVAILABLE_MESSAGE } from '../utils/rpcDisplay'
 
 export function Swap() {
     const { address } = useAccount()
@@ -34,23 +36,30 @@ export function Swap() {
     })
 
     // Query USDC balance (native token)
-    const { data: sttBalance, isLoading: isLoadingSTT } = useBalance({
+    const {
+        data: sttBalance,
+        isLoading: isLoadingSTT,
+        error: sttBalanceError,
+        refetch: refetchSttBalance,
+    } = useBalance({
         address: address,
         query: {
             enabled: !!address,
-            refetchInterval: 5000,
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
 
     // Query Haku balance (ERC20)
-    const { data: hakuBalance, isLoading: isLoadingHaku } = useReadContract({
+    const { data: hakuBalance, isLoading: isLoadingHaku, refetch: refetchHakuBalance } = useReadContract({
         address: CONTRACTS.TOKEN_B,
         abi: ERC20_ABI,
         functionName: 'balanceOf',
         args: address ? [address] : undefined,
         query: {
             enabled: !!address,
-            refetchInterval: 5000,
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
 
@@ -63,6 +72,11 @@ export function Swap() {
 
     const tokenASymbol = 'USDC'
     const tokenADecimals = 18 // USDC is native token, always 18 decimals
+    const sttBalanceDisplay = getBalanceDisplayState(
+        sttBalance ? formatEther(sttBalance.value) : undefined,
+        isLoadingSTT,
+        sttBalanceError,
+    )
     const tokenPay = mode === 'buy'
         ? { address: CONTRACTS.TOKEN_A, symbol: tokenASymbol }
         : { address: CONTRACTS.TOKEN_B, symbol: (tokenBName as string) || 'TokenB' }
@@ -125,26 +139,34 @@ export function Swap() {
         return `0x${(BigInt(poolSlot) + LIQUIDITY_OFFSET).toString(16).padStart(64, '0')}` as `0x${string}`
     }, [poolSlot])
 
-    const { data: slot0Bytes, isLoading: isLoadingPool, error: poolError } = useReadContract({
+    const { data: slot0Bytes, isLoading: isLoadingPool, error: poolError, refetch: refetchPoolState } = useReadContract({
         address: CONTRACTS.POOL_MANAGER,
         abi: POOL_MANAGER_ABI,
         functionName: 'extsload',
         args: poolSlot ? [poolSlot] : undefined,
         query: {
             enabled: !!poolSlot,
-            refetchInterval: 5000, // Refresh pool state every 5 seconds
+            refetchInterval: visibleRefetchInterval(POOL_REFETCH_MS),
+            refetchIntervalInBackground: false,
         }
     })
 
+    useEffect(() => {
+        if (poolError && import.meta.env.DEV) {
+            console.error('[Swap] Pool RPC read failed', poolError)
+        }
+    }, [poolError])
+
     // Query pool liquidity
-    const { data: liquidityBytes } = useReadContract({
+    const { data: liquidityBytes, refetch: refetchPoolLiquidity } = useReadContract({
         address: CONTRACTS.POOL_MANAGER,
         abi: POOL_MANAGER_ABI,
         functionName: 'extsload',
         args: liquiditySlot ? [liquiditySlot] : undefined,
         query: {
             enabled: !!liquiditySlot,
-            refetchInterval: 5000,
+            refetchInterval: visibleRefetchInterval(POOL_REFETCH_MS),
+            refetchIntervalInBackground: false,
         }
     })
 
@@ -307,16 +329,23 @@ export function Swap() {
     }, [amount, poolSlot0, mode, tokenADecimals, tokenBDecimals])
 
    
-    const { data: quoteResult, isLoading: isQuoting, error: quoteError } = useReadContract({
+    const { data: quoteResult, isLoading: isQuoting, error: quoteError, refetch: refetchQuote } = useReadContract({
         address: CONTRACTS.QUOTER,
         abi: QUOTER_ABI,
         functionName: 'quoteExactInputSingle',
         args: quoteParams ? [quoteParams] : undefined,
         query: {
             enabled: !!quoteParams && !!amount && amount !== '0' && hasLiquidity,
-            refetchInterval: 5000, 
+            refetchInterval: visibleRefetchInterval(POOL_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
+
+    useEffect(() => {
+        if (quoteError && import.meta.env.DEV) {
+            console.error('[Swap] Quote RPC read failed', quoteError)
+        }
+    }, [quoteError])
 
     // Parse Quoter result and calculate slippage
     const quoteInfo = useMemo(() => {
@@ -363,7 +392,36 @@ export function Swap() {
         }
     }, [quoteResult, currentPrice, amount, mode, poolSlot0, tokenADecimals, tokenBDecimals])
 
-    const { writeContract, error: writeError } = useWriteContract()
+    const { writeContract, data: transactionHash, error: writeError } = useWriteContract()
+    const { isSuccess: isTransactionConfirmed } = useWaitForTransactionReceipt({
+        hash: transactionHash,
+    })
+    const refreshedTransactionHashRef = useRef<string | undefined>(undefined)
+
+    useEffect(() => {
+        if (
+            !isTransactionConfirmed
+            || !transactionHash
+            || refreshedTransactionHashRef.current === transactionHash
+        ) return
+
+        refreshedTransactionHashRef.current = transactionHash
+        void Promise.all([
+            refetchSttBalance(),
+            refetchHakuBalance(),
+            refetchPoolState(),
+            refetchPoolLiquidity(),
+            refetchQuote(),
+        ])
+    }, [
+        isTransactionConfirmed,
+        transactionHash,
+        refetchSttBalance,
+        refetchHakuBalance,
+        refetchPoolState,
+        refetchPoolLiquidity,
+        refetchQuote,
+    ])
 
  
     const outputDecimals = mode === 'buy' ? (tokenBDecimals ?? 18) : tokenADecimals
@@ -596,11 +654,20 @@ export function Swap() {
                                     </div>
                                     <div className="text-white text-sm font-medium">USDC</div>
                                 </div>
-                                <div className="text-white text-sm font-semibold">
-                                    {isLoadingSTT ? (
+                                <div className="text-right">
+                                    {sttBalanceDisplay.kind === 'loading' ? (
                                         <span className="loading loading-spinner loading-xs"></span>
                                     ) : (
-                                        sttBalance ? parseFloat(formatEther(sttBalance.value)).toFixed(4) : '0.0000'
+                                        <>
+                                            <div className="text-white text-sm font-semibold">
+                                                {sttBalanceDisplay.value}
+                                            </div>
+                                            {sttBalanceDisplay.kind === 'unavailable' && (
+                                                <div className="text-red-300 text-[10px] mt-0.5">
+                                                    {sttBalanceDisplay.label}
+                                                </div>
+                                            )}
+                                        </>
                                     )}
                                 </div>
                             </>
@@ -801,16 +868,9 @@ export function Swap() {
                         </div>
                     )}
                     {quoteError && amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
-                        <div className="mt-2 px-4 py-3 bg-red-900/20 rounded-lg border border-red-700/50">
-                            <div className="text-red-400 text-xs font-semibold mb-1">Quoter Error</div>
-                            <div className="text-red-300 text-xs mb-2 break-words">{quoteError.message}</div>
-                            <div className="text-yellow-400 text-xs mt-2">
-                                💡 Possible causes:
-                                <ul className="list-disc list-inside mt-1 space-y-0.5">
-                                    <li>Pool has no liquidity (need to add liquidity first)</li>
-                                    <li>Trade amount too large, exceeds available liquidity</li>
-                                    <li>Pool not properly initialized</li>
-                                </ul>
+                        <div className="mt-2 px-4 py-2 bg-red-900/20 rounded-lg border border-red-700/50">
+                            <div className="text-red-400 text-xs">
+                                {RPC_UNAVAILABLE_MESSAGE}
                             </div>
                         </div>
                     )}
@@ -821,7 +881,9 @@ export function Swap() {
                     )}
                     {poolError && (
                         <div className="mt-2 px-4 py-2 bg-red-900/20 rounded-lg border border-red-700/50">
-                            <div className="text-red-400 text-xs">Error: {poolError.message}</div>
+                            <div className="text-red-400 text-xs">
+                                {RPC_UNAVAILABLE_MESSAGE}
+                            </div>
                         </div>
                     )}
                     {!poolSlot0 && !isLoadingPool && !poolError && amount && (

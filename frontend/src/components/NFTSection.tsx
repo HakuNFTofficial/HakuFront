@@ -1,10 +1,11 @@
-import { useEffect, useState, useRef } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadContract } from 'wagmi'
 import { formatUnits } from 'viem'
 import { NFTImageReveal } from './NFTImageReveal'
 import { CONTRACTS, HUKU_NFT_ABI, ERC20_ABI } from '../config/contracts'
 import { useEventAssociation } from '../hooks/useEventAssociation'
-import { useWebSocket } from '../hooks/useWebSocket'
+import { useWebSocketEvent, useWebSocketReconnect } from '../providers/WebSocketProvider'
+import { BALANCE_REFETCH_MS, STATIC_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
 
 interface NFT {
     nft_id: number
@@ -46,7 +47,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
     // ✅ Independent approve status for each NFT: track which NFTs have completed approve (for displaying correct button)
     const [approvedNftIds, setApprovedNftIds] = useState<Set<number>>(new Set())
     const timeoutRef = useRef<NodeJS.Timeout | null>(null) // Timeout timer reference
-    const hasRequestedInitialDataRef = useRef<boolean>(false) // Track if initial data has been requested
+    const initialDataAddressRef = useRef<string | null>(null) // Track which wallet received initial data
     
     // Wagmi hooks for contract interaction
     const { writeContract, data: hash, error: writeError, isPending: isWritePending } = useWriteContract()
@@ -101,7 +102,8 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
         abi: HUKU_NFT_ABI,
         functionName: 'mintPrice',
         query: {
-            refetchInterval: 10000, // Refresh every 10 seconds
+            refetchInterval: visibleRefetchInterval(STATIC_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
     
@@ -122,7 +124,8 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             : undefined,
         query: {
             enabled: !!address && !!CONTRACTS.HUKU_NFT,
-            refetchInterval: 3000, // Refresh every 3 seconds
+            refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
+            refetchIntervalInBackground: false,
         },
     })
     
@@ -181,92 +184,40 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
         }
     }, [isRevokeConfirmed, revokingNftId, refetchAllowance])
 
-    // ✅ Subscribe to WebSocket to receive NFTUpdate events (real-time updates)
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const wsHost = window.location.host
-    const { status: wsStatus } = useWebSocket({
-        url: `${wsProtocol}//${wsHost}/ws`,
-        enabled: !!address,  // Only connect when address exists
-        onMessage: (message: any) => {
-            // Only process NFTUpdate events
-            if (message.type === 'NFTUpdate' && message.data) {
-                const nftUpdate = message.data as NFTQueryResponse
-                
-                // Only update current user's NFT data
-                if (address && nftUpdate.user_address.toLowerCase() === address.toLowerCase()) {
-                    console.log('[NFTSection] 📦 Received NFTUpdate via WebSocket:', nftUpdate)
-                    console.log('[NFTSection] Updating NFTs list:', nftUpdate.nfts?.length || 0, 'NFTs')
-                    
-                    if (nftUpdate.nfts && nftUpdate.nfts.length > 0) {
-                        setNfts(nftUpdate.nfts)
-                        // ✅ When NFT list updates via WebSocket, sync update approvedNftIds
-                        // ⚠️ Important: only clear approve status of NFTs that entered minting process (is_mint !== 0)
-                        // Preserve approve status of all NFTs with is_mint === 0
-                        // ⚠️ Critical: don't clear just-authorized NFT status, even if WebSocket update happens after authorization confirmed
-                        setApprovedNftIds(prev => {
-                            const newSet = new Set<number>()
-                            // Traverse new NFT list, preserve approve status of NFTs with is_mint === 0
-                            nftUpdate.nfts.forEach((nft: NFT) => {
-                                if (nft.is_mint === 0 && prev.has(nft.nft_id)) {
-                                    newSet.add(nft.nft_id)
-                                }
-                            })
-                            // ⚠️ Important: only preserve NFTs already in prev and with is_mint === 0 in new list
-                            // Don't add new NFTs, only preserve existing authorization status
-                            // This avoids erroneously adding all NFTs during WebSocket update
-                            console.log('[NFTSection] WebSocket update - approvedNftIds:', {
-                                previous: [...prev],
-                                new: [...newSet],
-                                nftsInUpdate: nftUpdate.nfts.map((n: NFT) => ({ id: n.nft_id, is_mint: n.is_mint })),
-                                note: 'Preserving approvedNftIds for NFTs with is_mint === 0'
-                            })
-                            return newSet
-                        })
-                    } else {
-                        setNfts([])
-                        setApprovedNftIds(new Set())
+    // ✅ Subscribe through the application-wide WebSocket connection.
+    useWebSocketEvent<NFTQueryResponse>('NFTUpdate', (nftUpdate) => {
+        if (!address || nftUpdate.user_address.toLowerCase() !== address.toLowerCase()) {
+            return
+        }
+
+        if (nftUpdate.nfts && nftUpdate.nfts.length > 0) {
+            setNfts(nftUpdate.nfts)
+            setApprovedNftIds(prev => {
+                const newSet = new Set<number>()
+                nftUpdate.nfts.forEach((nft: NFT) => {
+                    if (nft.is_mint === 0 && prev.has(nft.nft_id)) {
+                        newSet.add(nft.nft_id)
                     }
-                    
-                    // Clear error and loading states
-                    setError(null)
-                    setIsLoading(false)
-                } else {
-                    console.log('[NFTSection] Ignoring NFTUpdate for different user:', nftUpdate.user_address)
-                }
-            }
-        },
-        onError: () => {
-            // Silently handle WebSocket errors (backend may be offline)
-            if (import.meta.env.DEV) {
-                console.warn('[NFTSection] WebSocket unavailable (backend offline)')
-            }
-            // Don't show error to user, just stop loading
-            setIsLoading(false)
-        },
-    })
+                })
+                return newSet
+            })
+        } else {
+            setNfts([])
+            setApprovedNftIds(new Set())
+        }
 
-    // ✅ After WebSocket connection succeeds, actively request initial data once (only on first connection)
-    useEffect(() => {
-            if (!address) {
-                setNfts([])
-            setIsLoading(false)
-            hasRequestedInitialDataRef.current = false
-                return
-            }
+        setError(null)
+        setIsLoading(false)
+    }, Boolean(address))
 
-        // Only request when WebSocket connected and initial data hasn't been requested yet
-        if (wsStatus === 'connected' && !hasRequestedInitialDataRef.current) {
-            hasRequestedInitialDataRef.current = true
+    const fetchNFTSnapshot = useCallback(async () => {
+        if (!address) return
 
-            const fetchInitialNFTs = async () => {
             setIsLoading(true)
             setError(null)
 
             try {
-                    // Use deprecated endpoint to get initial data (only for first load after WebSocket connection)
                 const apiUrl = `/api/query-mint?user_address=${address}&include_chips=false`
-                    console.log('[NFTSection] Fetching initial NFTs after WebSocket connected:', apiUrl)
-                
                 const response = await fetch(apiUrl)
                 if (!response.ok) {
                     const errorText = await response.text()
@@ -274,29 +225,15 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                     throw new Error(`Failed to fetch NFTs: ${response.status} ${response.statusText}`)
                 }
                 const data: NFTQueryResponse = await response.json()
-                    console.log('[NFTSection] Initial API response:', data)
-                console.log('[NFTSection] Found NFTs:', data.nfts?.length || 0)
-                
+
                 if (data.nfts && data.nfts.length > 0) {
                     setNfts(data.nfts)
-                    // ✅ When NFT list updates, sync update approvedNftIds
-                    // ⚠️ Important: only clear approve status of NFTs that entered minting process (is_mint !== 0)
-                    // Preserve approve status of all NFTs with is_mint === 0
                     setApprovedNftIds(prev => {
                         const newSet = new Set<number>()
-                        // Traverse new NFT list, preserve approve status of NFTs with is_mint === 0
                         data.nfts.forEach((nft: NFT) => {
                             if (nft.is_mint === 0 && prev.has(nft.nft_id)) {
                                 newSet.add(nft.nft_id)
                             }
-                        })
-                        // ⚠️ Important: only preserve NFTs already in prev and with is_mint === 0 in new list
-                        // Don't add new NFTs, only preserve existing authorization status
-                        // This avoids erroneously adding all NFTs during initial load
-                        console.log('[NFTSection] Initial load - approvedNftIds:', {
-                            previous: [...prev],
-                            new: [...newSet],
-                            nftsInData: data.nfts.map((n: NFT) => ({ id: n.nft_id, is_mint: n.is_mint }))
                         })
                         return newSet
                     })
@@ -305,24 +242,33 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                     setApprovedNftIds(new Set())
                 }
             } catch (err) {
-                    console.error('[NFTSection] Failed to fetch initial NFTs:', err)
+                console.error('[NFTSection] Failed to fetch initial NFTs:', err)
                 setError(`Failed to load NFTs: ${err instanceof Error ? err.message : 'Unknown error'}`)
                 setNfts([])
             } finally {
                 setIsLoading(false)
             }
-        }
+    }, [address])
 
-            fetchInitialNFTs()
-        }
-    }, [wsStatus, address])  // Only trigger when WebSocket status or address changes
-
-    // Log WebSocket connection status
+    // Fetch the initial snapshot independently of WebSocket availability.
     useEffect(() => {
-        if (address) {
-            console.log('[NFTSection] WebSocket status:', wsStatus, 'for user:', address)
+        if (!address) {
+            setNfts([])
+            setIsLoading(false)
+            initialDataAddressRef.current = null
+            return
         }
-    }, [wsStatus, address])
+
+        if (initialDataAddressRef.current === address) {
+            return
+        }
+        initialDataAddressRef.current = address
+
+        fetchNFTSnapshot()
+    }, [address, fetchNFTSnapshot])
+
+    // Events are not replayed, so repair any gap after a reconnect.
+    useWebSocketReconnect(fetchNFTSnapshot)
 
     // Listen for transaction hash - get hash after wallet popup and user confirmation
     useEffect(() => {
