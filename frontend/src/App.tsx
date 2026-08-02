@@ -8,6 +8,7 @@ import { NFTSection } from './components/NFTSection'
 import { Profile } from './components/Profile'
 import { VersionChecker } from './components/VersionChecker'
 import { NetworkMismatchModal } from './components/NetworkMismatchModal'
+import { WalletConnectModal } from './components/WalletConnectModal'
 import { useWalletChainId } from './hooks/useWalletChainId'
 import { REQUIRED_CHAIN_ID, getChainName } from './config/chain'
 import { CONTRACTS } from './config/contracts'
@@ -62,7 +63,7 @@ function App() {
             setTimeout(() => setCopied(false), 2000)
         }
     }
-    const { connectors, connect, isPending: isConnecting } = useConnect()
+    const { connectors, connectAsync } = useConnect()
     const { disconnect, isPending: isDisconnecting } = useDisconnect()
 
     // Get current chain name (directly use chain ID from wallet)
@@ -75,6 +76,7 @@ function App() {
     const [isSwitchingNetwork, setIsSwitchingNetwork] = useState(false)
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
     const [isWalletMenuOpen, setIsWalletMenuOpen] = useState(false)  // Hamburger menu state
+    const [isWalletConnectModalOpen, setIsWalletConnectModalOpen] = useState(false)
 
     // Transaction Data State
     const [transactionData, setTransactionData] = useState<any>(null)
@@ -353,17 +355,10 @@ function App() {
                                 </>
                         ) : (
                             <button
-                                onClick={() => {
-                                    // Connect with the first available connector
-                                    const firstConnector = connectors[0]
-                                    if (firstConnector) {
-                                        connect({ connector: firstConnector })
-                                    }
-                                }}
-                                disabled={isConnecting || connectors.length === 0}
+                                onClick={() => setIsWalletConnectModalOpen(true)}
                                 className="btn btn-primary px-6 py-2 text-sm md:text-base font-medium"
                             >
-                                {isConnecting ? 'Connecting...' : 'Connect'}
+                                Connect
                             </button>
                         )}
 
@@ -499,13 +494,11 @@ function App() {
 
             {/* Main Content */}
             <div className="p-2 md:p-4">
-                {(isConnecting || isDisconnecting) ? (
+                {isDisconnecting ? (
                     <div className="w-full flex flex-col items-center justify-center py-20">
                         <div className="text-center space-y-4">
                             <span className="loading loading-spinner loading-lg text-primary"></span>
-                            <p className="text-gray-500">
-                                {isConnecting ? 'Connecting Wallet...' : 'Disconnecting...'}
-                            </p>
+                            <p className="text-gray-500">Disconnecting...</p>
                         </div>
                     </div>
                 ) : isConnected && address ? (
@@ -657,6 +650,15 @@ function App() {
                 requiredChainId={REQUIRED_CHAIN_ID}
                 onSwitchNetwork={switchNetwork}
                 isSwitching={isSwitchingNetwork}
+            />
+
+            <WalletConnectModal
+                isOpen={isWalletConnectModalOpen}
+                connectors={connectors}
+                onClose={() => setIsWalletConnectModalOpen(false)}
+                onConnect={(selectedConnector) =>
+                    connectAsync({ connector: selectedConnector })
+                }
             />
         </div>
     )

@@ -342,7 +342,18 @@ Create `frontend/.env.local`:
 VITE_RPC_URL=http://localhost:8545
 VITE_CHAIN_ID=31337
 VITE_CONTRACT_ADDRESSES=<contract_addresses>
+VITE_WALLETCONNECT_PROJECT_ID=replace_with_reown_project_id
 ```
+
+`VITE_WALLETCONNECT_PROJECT_ID` enables the WalletConnect QR option in the
+wallet picker. Create the ID in the Reown Dashboard and configure it as a
+build-time environment variable. Do not commit the real value to Git.
+
+For the production frontend at `https://www.hakupump.club`, set the same
+variable in the production build environment before running `npm run build`.
+Add `https://www.hakupump.club` to the Reown project's Allowed Domains. Also
+add `https://hakupump.club` when the bare domain serves or redirects into the
+application.
 
 ## 🔍 Troubleshooting
 

@@ -23,6 +23,8 @@ export function WalletConnectModal({
     >(null)
     const [errorMessage, setErrorMessage] = useState<string | null>(null)
     const firstWalletRef = useRef<HTMLButtonElement>(null)
+    const onCloseRef = useRef(onClose)
+    onCloseRef.current = onClose
     const options = useMemo(
         () => normalizeWalletOptions(connectors),
         [connectors],
@@ -43,7 +45,7 @@ export function WalletConnectModal({
             firstWalletRef.current?.focus()
         })
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (event.key === 'Escape') onClose()
+            if (event.key === 'Escape') onCloseRef.current()
         }
         window.addEventListener('keydown', handleKeyDown)
 
@@ -53,7 +55,7 @@ export function WalletConnectModal({
             document.body.style.overflow = previousOverflow
             previousFocus?.focus()
         }
-    }, [isOpen, onClose])
+    }, [isOpen])
 
     if (!isOpen) return null
 
