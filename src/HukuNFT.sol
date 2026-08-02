@@ -92,6 +92,12 @@ contract HukuNFT is
         uint256 blockNumber
     );
 
+    /// @notice Emitted when the wallet-facing metadata base URL changes.
+    /// @dev ERC-4906 events are inherited from ERC721URIStorageUpgradeable.
+    event MetadataBaseURIUpdated(string metadataBaseURI);
+
+    error InvalidMetadataBaseURI();
+
     uint256 public nextTokenId;
     mapping(uint256 => address) public mintUser;
 
@@ -108,8 +114,11 @@ contract HukuNFT is
     uint256 public mintPrice; // 每个 NFT 的价格（以 HakuToken 计价，单位：wei）
     mapping(uint256 => uint256) public tokenRefundAmount; // 每个 token 实际可退款金额
 
+    // HTTPS base URL used by wallets; empty keeps the original IPFS fallback.
+    string public metadataBaseURI;
+
     /// @dev Reserve storage gap for future upgrades
-    uint256[47] private __gap; // 减少 1 个 slot，为 tokenRefundAmount 留出空间
+    uint256[46] private __gap;
 
     constructor() {
         _disableInitializers();
@@ -150,9 +159,41 @@ contract HukuNFT is
         address newImplementation
     ) internal override onlyOwner {}
 
+    /// @notice Initialize HTTPS metadata on an existing v1 proxy.
+    function initializeV2(
+        string calldata metadataBaseURI_
+    ) external reinitializer(2) onlyOwner {
+        _setMetadataBaseURI(metadataBaseURI_);
+    }
+
+    /// @notice Update the wallet-facing metadata base URL.
+    /// @dev Passing an empty value restores the original IPFS URI behavior.
+    function setMetadataBaseURI(
+        string calldata metadataBaseURI_
+    ) external onlyOwner {
+        _setMetadataBaseURI(metadataBaseURI_);
+    }
+
+    function _setMetadataBaseURI(
+        string calldata metadataBaseURI_
+    ) internal {
+        bytes memory value = bytes(metadataBaseURI_);
+        if (value.length > 0 && value[value.length - 1] != 0x2f) {
+            revert InvalidMetadataBaseURI();
+        }
+        metadataBaseURI = metadataBaseURI_;
+        emit MetadataBaseURIUpdated(metadataBaseURI_);
+        if (nextTokenId > 1) {
+            emit BatchMetadataUpdate(1, nextTokenId - 1);
+        }
+    }
+
     /// @notice override base URI used by tokenURI()
-    /// @dev Returns ipfs://{baseCID}/
+    /// @dev Returns the configured HTTPS base or ipfs://{baseCID}/ as fallback.
     function _baseURI() internal view override returns (string memory) {
+        if (bytes(metadataBaseURI).length > 0) {
+            return metadataBaseURI;
+        }
         return string(abi.encodePacked("ipfs://", baseCID, "/"));
     }
 
@@ -184,7 +225,9 @@ contract HukuNFT is
         override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
         returns (bool)
     {
-        return super.supportsInterface(interfaceId);
+        return
+            interfaceId == 0x49064906 ||
+            super.supportsInterface(interfaceId);
     }
 
     /// @notice mint a token for `to`
