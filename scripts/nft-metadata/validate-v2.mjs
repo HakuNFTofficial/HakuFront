@@ -37,8 +37,30 @@ function publicUrl(origin, pathname) {
   return new URL(pathname, base).toString()
 }
 
-async function validatePublicFile({ url, expectedSha256, expectedContentType, fetchImpl }) {
-  const response = await fetchImpl(url, { redirect: 'manual' })
+function delay(milliseconds) {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds))
+}
+
+async function validatePublicFile({
+  url,
+  expectedSha256,
+  expectedContentType,
+  fetchImpl,
+  maxFetchAttempts,
+  retryDelayMs,
+}) {
+  let response
+  for (let attempt = 1; attempt <= maxFetchAttempts; attempt += 1) {
+    try {
+      response = await fetchImpl(url, { redirect: 'manual' })
+      break
+    } catch (error) {
+      if (attempt === maxFetchAttempts) {
+        throw new Error(`${url} fetch failed after ${attempt} attempt(s): ${error.message}`, { cause: error })
+      }
+      await delay(retryDelayMs * attempt)
+    }
+  }
   if (response.status !== 200) throw new Error(`${url} returned status ${response.status}, expected status 200`)
   if (response.headers.get('access-control-allow-origin') !== '*') {
     throw new Error(`${url} is missing Access-Control-Allow-Origin: *`)
@@ -60,9 +82,17 @@ export async function validatePublicRelease({
   publicOrigin,
   fetchImpl = fetch,
   concurrency = 12,
+  maxFetchAttempts = 3,
+  retryDelayMs = 250,
 }) {
   if (!Number.isInteger(concurrency) || concurrency < 1) {
     throw new Error(`Invalid public validation concurrency: ${concurrency}`)
+  }
+  if (!Number.isInteger(maxFetchAttempts) || maxFetchAttempts < 1) {
+    throw new Error(`Invalid max fetch attempts: ${maxFetchAttempts}`)
+  }
+  if (!Number.isInteger(retryDelayMs) || retryDelayMs < 0) {
+    throw new Error(`Invalid retry delay: ${retryDelayMs}`)
   }
   const files = manifest.entries.flatMap((entry) => [
     {
@@ -81,7 +111,12 @@ export async function validatePublicRelease({
     while (cursor < files.length) {
       const file = files[cursor]
       cursor += 1
-      await validatePublicFile({ ...file, fetchImpl })
+      await validatePublicFile({
+        ...file,
+        fetchImpl,
+        maxFetchAttempts,
+        retryDelayMs,
+      })
     }
   }
   const workerCount = Math.min(concurrency, files.length)

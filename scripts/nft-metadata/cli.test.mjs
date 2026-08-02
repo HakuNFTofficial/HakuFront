@@ -98,6 +98,59 @@ test('public validation rejects a redirected response', async () => {
   }), /status 200/)
 })
 
+test('public validation identifies the URL when fetch terminates', async () => {
+  const manifest = {
+    entries: [{
+      tokenUrl: '740',
+      metadata: { fileName: '740.json', sha256: '0'.repeat(64) },
+      image: { fileName: '740.png', sha256: '0'.repeat(64) },
+    }],
+  }
+  await assert.rejects(validatePublicRelease({
+    manifest,
+    publicOrigin: 'https://www.hakupump.club',
+    fetchImpl: async () => { throw new Error('terminated') },
+    concurrency: 1,
+    maxFetchAttempts: 1,
+    retryDelayMs: 0,
+  }), /nft-metadata\/v2\/740[.]json.*terminated/)
+})
+
+test('public validation retries a transport failure before receiving HTTP', async () => {
+  const bytes = Buffer.from('{}')
+  const manifest = {
+    entries: [{
+      tokenUrl: '740',
+      metadata: { fileName: '740.json', sha256: sha256(bytes) },
+      image: { fileName: '740.png', sha256: sha256(bytes) },
+    }],
+  }
+  let attempts = 0
+  const fetchImpl = async (url) => {
+    attempts += 1
+    if (attempts === 1) throw new Error('terminated')
+    const isMetadata = String(url).endsWith('.json')
+    return new Response(bytes, {
+      status: 200,
+      headers: {
+        'access-control-allow-origin': '*',
+        'cache-control': 'public, max-age=31536000, immutable',
+        'content-type': isMetadata ? 'application/json' : 'image/png',
+      },
+    })
+  }
+  const result = await validatePublicRelease({
+    manifest,
+    publicOrigin: 'https://www.hakupump.club',
+    fetchImpl,
+    concurrency: 1,
+    maxFetchAttempts: 2,
+    retryDelayMs: 0,
+  })
+  assert.equal(result.checkedFiles, 2)
+  assert.equal(attempts, 3)
+})
+
 test('public validation uses bounded concurrency', async () => {
   const bytes = Buffer.from('{}')
   const entries = Array.from({ length: 3 }, (_, index) => ({
