@@ -92,19 +92,19 @@ export async function buildRelease({
 
   assertUnique(sourceMap, 'nftId', 'NFT ID')
   assertUnique(sourceMap, 'fileName', 'source filename')
-  assertUnique(sourceMap, 'tokenUrl', 'token URL')
 
   const rows = sourceMap.map((row) => {
     const derivedTokenUrl = tokenUrlFromFileName(row.fileName)
-    const mappedTokenUrl = String(row.tokenUrl)
-    if (mappedTokenUrl !== derivedTokenUrl) {
-      throw new Error(`Token URL ${mappedTokenUrl} does not match filename ${row.fileName}`)
+    if (Number(row.isMint) === 2) {
+      const mappedTokenUrl = String(row.tokenUrl)
+      if (row.tokenId == null || mappedTokenUrl !== derivedTokenUrl) {
+        throw new Error(`Minted NFT ${row.nftId} has an invalid token mapping`)
+      }
     }
-    if (Number(row.isMint) === 2 && (!row.tokenId || mappedTokenUrl !== derivedTokenUrl)) {
-      throw new Error(`Minted NFT ${row.nftId} has an invalid token mapping`)
-    }
-    return { ...row, tokenUrl: mappedTokenUrl }
-  }).sort((left, right) => {
+    return { ...row, tokenUrl: derivedTokenUrl }
+  })
+  assertUnique(rows, 'tokenUrl', 'token URL')
+  rows.sort((left, right) => {
     const a = BigInt(left.tokenUrl)
     const b = BigInt(right.tokenUrl)
     return a < b ? -1 : a > b ? 1 : 0

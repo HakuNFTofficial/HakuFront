@@ -53,3 +53,26 @@ test('release output is byte-identical for identical explicit inputs', async () 
   assert.deepEqual(readFileSync(join(outA, 'json', '740.json')), readFileSync(join(outB, 'json', '740.json')))
   assert.deepEqual(readFileSync(join(outA, 'manifest.json')), readFileSync(join(outB, 'manifest.json')))
 })
+
+test('unminted rows derive token URL from the numeric PNG filename', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'haku-unminted-'))
+  const sourceJson = join(root, 'source-json')
+  const sourceImages = join(root, 'source-images')
+  const outputDir = join(root, 'out')
+  mkdirSync(sourceJson)
+  mkdirSync(sourceImages)
+  writeFileSync(join(sourceImages, '12.png'), Buffer.from('png-fixture'))
+  writeFileSync(join(sourceJson, '12.json'), JSON.stringify({ name: 'Haku #12', attributes: [] }))
+
+  const manifest = await buildRelease({
+    sourceMap: [{ nftId: 1261, fileName: '12.png', tokenId: null, tokenUrl: null, isMint: 0 }],
+    sourceJsonDir: sourceJson,
+    sourceImageDir: sourceImages,
+    outputDir,
+    generatedAt: '2026-08-02T16:00:00.000Z',
+    gitCommit: 'abc123',
+    cidForFile: async () => CID,
+  })
+  assert.equal(manifest.entries[0].tokenUrl, '12')
+  assert.equal(manifest.entries[0].tokenId, null)
+})
