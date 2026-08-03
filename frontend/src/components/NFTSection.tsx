@@ -6,6 +6,11 @@ import { CONTRACTS, HUKU_NFT_ABI, ERC20_ABI } from '../config/contracts'
 import { useEventAssociation } from '../hooks/useEventAssociation'
 import { useWebSocketEvent, useWebSocketReconnect } from '../providers/WebSocketProvider'
 import { BALANCE_REFETCH_MS, STATIC_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
+import {
+    BurnSynchronizationTimeoutError,
+    getBurnConfirmationMessage,
+    waitForBurnSynchronization,
+} from '../nft/burnFlow'
 
 interface NFT {
     nft_id: number
@@ -74,7 +79,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
     
     // Listen for burn errors
     useEffect(() => {
-        if (burnError && burningNftId) {
+        if (burnError && burningNftId !== null) {
             console.error('[NFTSection] ❌ Burn transaction error:', burnError)
             setBurningNftId(null)
             
@@ -82,7 +87,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             if (burnError.message) {
                 errorMessage += burnError.message
                 // Check common errors
-                if (burnError.message.includes('ERC721InsufficientApproval') || burnError.message.includes('ERC721InsufficientApproval')) {
+                if (burnError.message.includes('ERC721InsufficientApproval')) {
                     errorMessage = 'You do not have permission to burn this NFT (not owner or not approved)'
                 } else if (burnError.message.includes('ERC721NonexistentToken')) {
                     errorMessage = 'This NFT does not exist or has been destroyed'
@@ -205,6 +210,14 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             setNfts([])
             setApprovedNftIds(new Set())
         }
+
+        setBurningNftId(currentNftId => {
+            if (currentNftId === null) return null
+            const burnedNft = nftUpdate.nfts.find((nft) => nft.nft_id === currentNftId)
+            return !burnedNft || (burnedNft.is_mint === 0 && !burnedNft.token_id)
+                ? null
+                : currentNftId
+        })
 
         setError(null)
         setIsLoading(false)
@@ -440,41 +453,62 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
         }
     }, [isConfirmed, mintingNftId, address, associatedTransfer])
 
-    // Listen for burn transaction confirmation success - refresh NFT list
+    // A confirmed burn is final on-chain. Keep polling until the backend reflects it,
+    // and keep the action locked if synchronization is delayed.
     useEffect(() => {
-        if (isBurnConfirmed && burningNftId && address) {
-            console.log('[NFTSection] ✅ Burn transaction confirmed, refreshing NFT list')
-            
-            // Refresh NFT list
-            const fetchNFTs = async () => {
-                try {
-                    const apiUrl = `/api/query-mint?user_address=${address}&include_chips=false`
-                    const res = await fetch(apiUrl)
-                    if (res.ok) {
-                        const result = await res.json()
-                        if (result.nfts) {
-                            setNfts(result.nfts)
-                            // ✅ Sync update approvedNftIds
-                            setApprovedNftIds(prev => {
-                                const newSet = new Set<number>()
-                                result.nfts.forEach((nft: NFT) => {
-                                    if (nft.is_mint === 0 && prev.has(nft.nft_id)) {
-                                        newSet.add(nft.nft_id)
-                                    }
-                                })
-                                return newSet
-                            })
-                            // Clear burningNftId
-                            setBurningNftId(null)
-                        }
-                    }
-                } catch (err) {
-                    console.error('[NFTSection] Failed to refresh NFTs after burn:', err)
-                }
+        if (
+            !isBurnConfirmed
+            || burningNftId === null
+            || !address
+            || !burnHash
+        ) return
+
+        const nftId = burningNftId
+        let cancelled = false
+
+        console.log('[NFTSection] ✅ Burn transaction confirmed, waiting for backend synchronization')
+
+        const fetchSnapshot = async (): Promise<NFTQueryResponse> => {
+            const apiUrl = `/api/query-mint?user_address=${address}&include_chips=false`
+            const response = await fetch(apiUrl)
+            if (!response.ok) {
+                throw new Error(`Failed to refresh NFTs: ${response.status} ${response.statusText}`)
             }
-        fetchNFTs()
+            return response.json() as Promise<NFTQueryResponse>
         }
-    }, [isBurnConfirmed, burningNftId, address])
+
+        waitForBurnSynchronization({ nftId, fetchSnapshot })
+            .then((result) => {
+                if (cancelled) return
+
+                setNfts([...result.nfts])
+                setApprovedNftIds(prev => {
+                    const newSet = new Set<number>()
+                    result.nfts.forEach((nft) => {
+                        if (nft.is_mint === 0 && prev.has(nft.nft_id)) {
+                            newSet.add(nft.nft_id)
+                        }
+                    })
+                    return newSet
+                })
+                setBurningNftId(null)
+            })
+            .catch((err) => {
+                if (cancelled) return
+
+                console.error('[NFTSection] Failed to synchronize NFTs after burn:', err)
+                if (err instanceof BurnSynchronizationTimeoutError) {
+                    alert('Burn confirmed on-chain, but application synchronization is delayed. Do not submit another burn. Keep this page open or refresh later.')
+                    return
+                }
+
+                alert('Burn confirmed on-chain, but the NFT list could not be refreshed. Do not submit another burn. Keep this page open or refresh later.')
+            })
+
+        return () => {
+            cancelled = true
+        }
+    }, [isBurnConfirmed, burningNftId, address, burnHash])
 
     // Listen for transaction failure - call backend rollback endpoint
     useEffect(() => {
@@ -746,6 +780,10 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                                                             alert('Please connect wallet first')
                                                             return
                                                         }
+
+                                                if (!window.confirm(getBurnConfirmationMessage(nft))) {
+                                                    return
+                                                }
                                                         
                                                 try {
                                                     setBurningNftId(nft.nft_id)
@@ -771,7 +809,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                                                     if (err instanceof Error) {
                                                         errorMessage += err.message
                                                         // Check if it's a permission error
-                                                        if (err.message.includes('ERC721InsufficientApproval') || err.message.includes('ERC721InsufficientApproval')) {
+                                                        if (err.message.includes('ERC721InsufficientApproval')) {
                                                             errorMessage = 'You do not have permission to burn this NFT (not owner or not approved)'
                                                         } else if (err.message.includes('ERC721NonexistentToken')) {
                                                             errorMessage = 'This NFT does not exist or has been destroyed'
@@ -782,9 +820,9 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                                                     alert(errorMessage)
                                                         }
                                                     }}
-                                            disabled={burningNftId === nft.nft_id || isBurnPending || isBurnConfirming}
+                                            disabled={burningNftId !== null || isBurnPending || isBurnConfirming}
                                                     className={`flex-1 text-xs py-2 rounded-lg transition-colors flex items-center justify-center gap-1 ${
-                                                burningNftId === nft.nft_id || isBurnPending || isBurnConfirming
+                                                burningNftId !== null || isBurnPending || isBurnConfirming
                                                     ? 'bg-orange-600/20 text-orange-400 border border-orange-600/50 cursor-default'
                                                     : 'bg-orange-600 hover:bg-orange-700 text-white'
                                                     }`}
