@@ -1,18 +1,21 @@
 /**
  * IPFS Configuration
  * Unified IPFS gateway and CID configuration
- * Using NFT.Storage official gateway: https://nftstorage.link/
+ * The gateway can be overridden at build time with VITE_IPFS_GATEWAY.
  */
 
-// Use local proxy in development for Canvas CORS support
-// Use ipfs.io in production (has CORS support)
-const isDev = import.meta.env.DEV
-const IPFS_GATEWAY = isDev 
-    ? 'https://ipfs.io/ipfs/' // ⚠️ Temporarily use direct IPFS gateway in dev (proxy not working)
-    : 'https://ipfs.io/ipfs/' // Use ipfs.io in production (CORS-enabled)
+const DEFAULT_IPFS_GATEWAY = 'https://gateway.pinata.cloud/ipfs/'
+
+function normalizeIPFSGateway(gateway: string): string {
+    return `${gateway.replace(/\/+$/, '')}/`
+}
+
+const IPFS_GATEWAY = normalizeIPFSGateway(
+    import.meta.env.VITE_IPFS_GATEWAY || DEFAULT_IPFS_GATEWAY,
+)
 
 export const IPFS_CONFIG = {
-    // IPFS gateway address - NFT.Storage with CORS support via proxy in dev
+    // IPFS gateway address with build-time override support
     GATEWAY: IPFS_GATEWAY,
 
     // Image CID (for grayscale large images in My NFTs area)
@@ -55,4 +58,3 @@ export function convertIPFSToHttp(ipfsUrl: string): string {
     }
     return ipfsUrl
 }
-
