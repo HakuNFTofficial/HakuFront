@@ -19,7 +19,7 @@ case "$1" in
             "tokenA()(address)") echo "0x0000000000000000000000000000000000000000" ;;
             "tokenB()(address)") echo "0x19c02CC2118Afe3CB59bb2f777d1a1124c7A6C12" ;;
             "decimals()(uint8)") echo "18" ;;
-            "balanceOf(address)(uint256)") echo "100000000000000000000000000" ;;
+            "balanceOf(address)(uint256)") echo "100000000000000000000000000 [1e26]" ;;
             "allowance(address,address)(uint256)") echo "100000000000000000000000000" ;;
             *) exit 1 ;;
         esac

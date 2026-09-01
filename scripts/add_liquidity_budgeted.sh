@@ -15,6 +15,21 @@ normalize_address() {
     printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
 }
 
+parse_uint() {
+    local label="$1"
+    local raw_value="$2"
+    local value="${raw_value%% *}"
+
+    case "$value" in
+        ""|*[!0-9]*)
+            echo "Invalid $label response: $raw_value" >&2
+            return 1
+            ;;
+    esac
+
+    printf '%s\n' "$value"
+}
+
 if [[ "${1:-}" == "--execute" ]]; then
     EXECUTE=true
 elif [[ -n "${1:-}" ]]; then
@@ -46,10 +61,10 @@ EXECUTOR_OWNER="$(cast call "$EXECUTOR_PROXY" 'owner()(address)' --rpc-url "$RPC
 EXECUTOR_POOL_MANAGER="$(cast call "$EXECUTOR_PROXY" 'poolManager()(address)' --rpc-url "$RPC_URL")"
 EXECUTOR_TOKEN_A="$(cast call "$EXECUTOR_PROXY" 'tokenA()(address)' --rpc-url "$RPC_URL")"
 EXECUTOR_TOKEN_B="$(cast call "$EXECUTOR_PROXY" 'tokenB()(address)' --rpc-url "$RPC_URL")"
-HAKU_DECIMALS="$(cast call "$HAKU_TOKEN" 'decimals()(uint8)' --rpc-url "$RPC_URL")"
-NATIVE_BALANCE="$(cast balance "$OWNER" --rpc-url "$RPC_URL")"
-HAKU_BALANCE="$(cast call "$HAKU_TOKEN" 'balanceOf(address)(uint256)' "$OWNER" --rpc-url "$RPC_URL")"
-ALLOWANCE="$(cast call "$HAKU_TOKEN" 'allowance(address,address)(uint256)' "$OWNER" "$EXECUTOR_PROXY" --rpc-url "$RPC_URL")"
+HAKU_DECIMALS="$(parse_uint "Haku decimals" "$(cast call "$HAKU_TOKEN" 'decimals()(uint8)' --rpc-url "$RPC_URL")")"
+NATIVE_BALANCE="$(parse_uint "native balance" "$(cast balance "$OWNER" --rpc-url "$RPC_URL")")"
+HAKU_BALANCE="$(parse_uint "Haku balance" "$(cast call "$HAKU_TOKEN" 'balanceOf(address)(uint256)' "$OWNER" --rpc-url "$RPC_URL")")"
+ALLOWANCE="$(parse_uint "Haku allowance" "$(cast call "$HAKU_TOKEN" 'allowance(address,address)(uint256)' "$OWNER" "$EXECUTOR_PROXY" --rpc-url "$RPC_URL")")"
 
 if [[ "$(normalize_address "$EXECUTOR_OWNER")" != "$(normalize_address "$OWNER")" ]]; then
     echo "Executor owner mismatch: expected $OWNER, got $EXECUTOR_OWNER" >&2

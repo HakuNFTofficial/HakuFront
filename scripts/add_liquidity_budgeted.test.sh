@@ -17,6 +17,14 @@ if ! OUTPUT="$(
 fi
 
 case "$OUTPUT" in
+    *"Parse error"*)
+        echo "The dry run passed an annotated cast value to bc" >&2
+        echo "$OUTPUT" >&2
+        exit 1
+        ;;
+esac
+
+case "$OUTPUT" in
     *"Dry run complete. No transaction was sent."*) ;;
     *)
         echo "Expected the macOS Bash dry run to complete" >&2
