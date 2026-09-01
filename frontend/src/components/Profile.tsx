@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { NFTImageStatic } from './NFTImageStatic'
+import { useWebSocketEvent, useWebSocketReconnect } from '../providers/WebSocketProvider'
 
 // Chip coordinate structure from backend
 interface Chip {
@@ -39,33 +40,48 @@ export function Profile() {
     const [nftData, setNftData] = useState<NFTListResponse | null>(null)
     const [isLoading, setIsLoading] = useState(false)
 
-    useEffect(() => {
-        if (!address) return
-
-        const fetchNFTs = async () => {
-            setIsLoading(true)
-            try {
-                const url = `/api/user-nft-list?user_address=${address}&page=${page}&page_size=20&include_chips=false`
-                console.log('[Profile] Fetching NFTs:', url)
-                
-                const response = await fetch(url)
-                if (response.ok) {
-                    const data = await response.json()
-                    console.log('[Profile] NFT data received:', data)
-                    
-                    setNftData(data)
-                } else {
-                    console.error('[Profile] Failed to fetch NFTs:', response.status)
-                }
-            } catch (error) {
-                console.error('[Profile] Failed to fetch NFTs:', error)
-            } finally {
-                setIsLoading(false)
-            }
+    const fetchNFTs = useCallback(async (showLoading = true) => {
+        if (!address) {
+            setNftData(null)
+            return
         }
 
-        fetchNFTs()
+        if (showLoading) setIsLoading(true)
+        try {
+            const url = `/api/user-nft-list?user_address=${address}&page=${page}&page_size=20&include_chips=true`
+            console.log('[Profile] Fetching NFTs:', url)
+
+            const response = await fetch(url)
+            if (response.ok) {
+                const data = await response.json()
+                console.log('[Profile] NFT data received:', data)
+
+                setNftData(data)
+            } else {
+                console.error('[Profile] Failed to fetch NFTs:', response.status)
+            }
+        } catch (error) {
+            console.error('[Profile] Failed to fetch NFTs:', error)
+        } finally {
+            if (showLoading) setIsLoading(false)
+        }
     }, [address, page])
+
+    useEffect(() => {
+        void fetchNFTs()
+    }, [fetchNFTs])
+
+    useWebSocketEvent<{ user_address: string }>('NFTUpdate', (nftUpdate) => {
+        if (!address || nftUpdate.user_address.toLowerCase() !== address.toLowerCase()) {
+            return
+        }
+
+        void fetchNFTs(false)
+    }, Boolean(address))
+
+    useWebSocketReconnect(() => {
+        void fetchNFTs(false)
+    })
 
     // Filter NFTs based on selected filter
     const filteredNFTs = nftData?.nfts.filter((nft) => {

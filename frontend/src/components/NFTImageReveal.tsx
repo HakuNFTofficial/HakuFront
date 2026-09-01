@@ -112,7 +112,7 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
         }
 
         // Responsibility 2: Generate unique request identifier
-        const requestKey = `${nft.nft_id}-${address}`
+        const requestKey = `${nft.nft_id}-${address}-${nft.owned_chips_count}`
         
         // Responsibility 3: Duplicate request check (double protection)
         // Protection 1: Check if there's an ongoing request
@@ -272,7 +272,7 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
             // Note: Don't clear hasFetchedChipsRef as it prevents duplicate requests
             // To re-request, trigger by changing nft_id or address
         }
-    }, [nft.nft_id, address]) 
+    }, [nft.nft_id, address, nft.owned_chips_count])
 
     // Effect 2: Use dual-layer canvas for rendering
     // Logic: 1. Bottom canvas: draw full image (converted to grayscale via CSS filter) 2. Top canvas: draw colored chips regions
@@ -908,4 +908,3 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
         </div>
     )
 }
-
