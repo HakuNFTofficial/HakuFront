@@ -32,9 +32,9 @@ export const POOL_CONFIG = {
     FEE: DYNAMIC_FEE_FLAG,  // Dynamic fee flag (0x800000) - actual fee set by hook
     HOOK_FEE: 3000,         // Actual fee rate set by hook: 0.3% (3000 basis points)
     TICK_SPACING: 60,       // Tick spacing
-    HOOKS: '0xd6f7f563225bad9ceab2b31aaddd19f17a89c088' as `0x${string}`, // Hook address
-    SQRT_PRICE_X96: '2505414483750479311832031227609', // 1 native USDC = 1000 HakuToken
-    POOL_ID: '0xdf93f8efd49f7d7c9d0c5c3b781afaf120d26fc1a5f991eea263bb62f029461e' as `0x${string}`,
+    HOOKS: '0xb7812d8f30e1e0a0434ac917b868aaeccabf4088' as `0x${string}`, // FeeGrowthHook
+    SQRT_PRICE_X96: '3543191142285914205922034323214', // 1 native USDC = 2000 HakuToken
+    POOL_ID: '0x12512a4efd2e73344522fd8f20520575d943f6127fde7a0b6c8d70f41cfe8f5c' as `0x${string}`,
 
     // Other contract addresses (must match PoolConfig.sol)
     QUOTER: CONTRACTS.QUOTER, // V4Quoter contract address
