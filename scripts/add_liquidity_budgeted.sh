@@ -11,6 +11,10 @@ SLIPPAGE_BPS="${SLIPPAGE_BPS:-50}"
 DEADLINE_SECONDS="${DEADLINE_SECONDS:-300}"
 EXECUTE=false
 
+normalize_address() {
+    printf '%s' "$1" | tr '[:upper:]' '[:lower:]'
+}
+
 if [[ "${1:-}" == "--execute" ]]; then
     EXECUTE=true
 elif [[ -n "${1:-}" ]]; then
@@ -47,15 +51,15 @@ NATIVE_BALANCE="$(cast balance "$OWNER" --rpc-url "$RPC_URL")"
 HAKU_BALANCE="$(cast call "$HAKU_TOKEN" 'balanceOf(address)(uint256)' "$OWNER" --rpc-url "$RPC_URL")"
 ALLOWANCE="$(cast call "$HAKU_TOKEN" 'allowance(address,address)(uint256)' "$OWNER" "$EXECUTOR_PROXY" --rpc-url "$RPC_URL")"
 
-if [[ "${EXECUTOR_OWNER,,}" != "${OWNER,,}" ]]; then
+if [[ "$(normalize_address "$EXECUTOR_OWNER")" != "$(normalize_address "$OWNER")" ]]; then
     echo "Executor owner mismatch: expected $OWNER, got $EXECUTOR_OWNER" >&2
     exit 1
 fi
-if [[ "${EXECUTOR_TOKEN_A,,}" != "0x0000000000000000000000000000000000000000" ]]; then
+if [[ "$(normalize_address "$EXECUTOR_TOKEN_A")" != "0x0000000000000000000000000000000000000000" ]]; then
     echo "Executor tokenA is not native currency: $EXECUTOR_TOKEN_A" >&2
     exit 1
 fi
-if [[ "${EXECUTOR_TOKEN_B,,}" != "${HAKU_TOKEN,,}" ]]; then
+if [[ "$(normalize_address "$EXECUTOR_TOKEN_B")" != "$(normalize_address "$HAKU_TOKEN")" ]]; then
     echo "Executor tokenB mismatch: expected $HAKU_TOKEN, got $EXECUTOR_TOKEN_B" >&2
     exit 1
 fi
