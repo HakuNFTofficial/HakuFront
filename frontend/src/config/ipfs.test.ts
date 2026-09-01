@@ -11,7 +11,24 @@ describe('IPFS configuration', () => {
     const { getIPFSImageUrl } = await import('./ipfs')
 
     expect(getIPFSImageUrl('572.png')).toBe(
-      'https://gateway.pinata.cloud/ipfs/QmWEBUGXYwUcbcMtJkyixobY8ajoDrGtdqK25eEF3GaUfb/572.png',
+      'https://gateway.pinata.cloud/ipfs/QmWALFJVacNc1EpMKdxMuCedDVcNwmWoc3L2jqX8erAb6L/572.png',
+    )
+  })
+
+  it('uses the current collection CID for metadata URLs', async () => {
+    vi.stubEnv('VITE_IPFS_GATEWAY', '')
+    const { getIPFSMetadataUrl } = await import('./ipfs')
+
+    expect(getIPFSMetadataUrl('572.json')).toBe(
+      'https://gateway.pinata.cloud/ipfs/Qmeub98s5ZPPANZVksF8Vs6CbPT3Xe5PEmkFEhgMP9ovzK/572.json',
+    )
+  })
+
+  it('exports the current collection root CID', async () => {
+    const { IPFS_CONFIG } = await import('./ipfs')
+
+    expect(IPFS_CONFIG.ROOT_CID).toBe(
+      'QmUCmfy48PsvUQBEHxeqPZTzQabFDY8U1CkT4ZFQN1pSQH',
     )
   })
 
@@ -29,7 +46,7 @@ describe('IPFS configuration', () => {
     const { getIPFSImageUrl } = await import('./ipfs')
 
     expect(getIPFSImageUrl('572.png')).toBe(
-      'https://images.example/ipfs/QmWEBUGXYwUcbcMtJkyixobY8ajoDrGtdqK25eEF3GaUfb/572.png',
+      'https://images.example/ipfs/QmWALFJVacNc1EpMKdxMuCedDVcNwmWoc3L2jqX8erAb6L/572.png',
     )
   })
 })
