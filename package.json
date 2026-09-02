@@ -15,10 +15,16 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "metadata:test": "node --test scripts/nft-metadata/*.test.mjs",
     "metadata:generate": "node scripts/nft-metadata/generate-v2.mjs",
-    "metadata:validate": "node scripts/nft-metadata/validate-v2.mjs"
+    "metadata:validate": "node scripts/nft-metadata/validate-v2.mjs",
+    "preview:test": "node --test scripts/nft-previews/preview-lib.test.mjs",
+    "preview:generate": "node scripts/nft-previews/generate.mjs",
+    "preview:validate": "node scripts/nft-previews/validate.mjs"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "devDependencies": {
+    "sharp": "^0.35.4"
+  }
 }
