@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
 import { NFTImageReveal } from './NFTImageReveal'
+import { NFTImageViewer } from './NFTImageViewer'
 import { useWebSocketEvent, useWebSocketReconnect } from '../providers/WebSocketProvider'
 
 // Chip coordinate structure from backend
@@ -19,7 +20,7 @@ interface NFT {
     owned_chips_count: number
     total_chips_count: number
     owned_chips?: Chip[]  // Array of owned chips with x,y,w,h coordinates
-    is_mint: number // 0: not minted, 1: minted, 2: burned
+    is_mint: number // 0: not requested, 1: mint in progress, 2: minted/burnable
     token_id?: string | null
 }
 
@@ -39,6 +40,7 @@ export function Profile() {
     const [page, setPage] = useState(1)
     const [nftData, setNftData] = useState<NFTListResponse | null>(null)
     const [isLoading, setIsLoading] = useState(false)
+    const [selectedNft, setSelectedNft] = useState<NFT | null>(null)
 
     const fetchNFTs = useCallback(async (showLoading = true) => {
         if (!address) {
@@ -175,9 +177,14 @@ export function Profile() {
                                     key={nft.nft_id}
                                     className="bg-[#1a1b23] rounded-lg md:rounded-xl border border-gray-700/50 overflow-hidden hover:border-blue-500/50 transition-all group"
                                 >
-                                    {/* NFT Image with Grayscale + Colored Chips */}
+                                    {/* Lightweight silhouette before mint; original after mint */}
                                     <div className="relative aspect-square bg-gray-800">
-                                        <NFTImageReveal nft={nft} />
+                                        <NFTImageReveal
+                                            nft={nft}
+                                            onViewOriginal={nft.is_mint === 2
+                                                ? () => setSelectedNft(nft)
+                                                : undefined}
+                                        />
                                         
                                         {/* Status Badge - Top Left */}
                                         <div className="absolute top-2 left-2 z-10">
@@ -270,6 +277,14 @@ export function Profile() {
                         Check browser console for API response details
                     </p>
                 </div>
+            )}
+
+            {selectedNft && (
+                <NFTImageViewer
+                    nft={selectedNft}
+                    isOpen
+                    onClose={() => setSelectedNft(null)}
+                />
             )}
         </div>
     )
