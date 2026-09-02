@@ -12,6 +12,7 @@ A complete local development environment for Uniswap V4 with NFT minting, token 
 - [Quick Start](#quick-start)
 - [Development](#development)
 - [Testing](#testing)
+- [NFT Preview Assets](#nft-preview-assets)
 - [Deployment](#deployment)
 - [Configuration](#configuration)
 - [Troubleshooting](#troubleshooting)
@@ -247,6 +248,26 @@ forge test --gas-report
 cd frontend
 npm test
 ```
+
+## NFT Preview Assets
+
+Before minting completes, the frontend loads a dedicated 512×512 WebP silhouette
+instead of the 3000×3000 original PNG. Generate the complete preview collection from
+the repository root:
+
+```bash
+npm run preview:generate -- --input "/Users/martin/Documents/我的文档/NFT/haku-final-10000/build/images" --output /private/tmp/haku-nft-silhouettes --expected-count 10000 --concurrency 4
+npm run preview:validate -- --input "/Users/martin/Documents/我的文档/NFT/haku-final-10000/build/images" --output /private/tmp/haku-nft-silhouettes --expected-count 10000
+```
+
+The generator requires an empty output directory and writes `manifest.json` alongside
+exactly 10,000 WebP files. Pin the validated output directory as a separate IPFS
+directory, then set its returned root CID as `VITE_IPFS_PREVIEW_CID` in the frontend
+build environment. A frontend deployment must not proceed while this value is empty.
+
+Before deploying the frontend, verify that the configured gateway returns HTTP 200 and
+`Content-Type: image/webp` for representative `1.webp`, `3995.webp`, and `10000.webp`
+URLs.
 
 ## 📦 Deployment
 
