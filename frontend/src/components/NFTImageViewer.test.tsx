@@ -33,6 +33,20 @@ describe('NFTImageViewer', () => {
         expect(onClose).toHaveBeenCalledOnce()
     })
 
+    it('restores the previous page overflow when it closes', () => {
+        const previousOverflow = document.body.style.overflow
+        document.body.style.overflow = 'clip'
+
+        const { unmount } = render(
+            <NFTImageViewer nft={minted} isOpen onClose={vi.fn()} />,
+        )
+        expect(document.body.style.overflow).toBe('hidden')
+
+        unmount()
+        expect(document.body.style.overflow).toBe('clip')
+        document.body.style.overflow = previousOverflow
+    })
+
     it('does not render for a pre-mint NFT', () => {
         render(
             <NFTImageViewer

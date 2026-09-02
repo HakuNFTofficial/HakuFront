@@ -253,7 +253,7 @@ npm test
 
 Before minting completes, the frontend loads a dedicated 512×512 WebP silhouette
 instead of the 3000×3000 original PNG. Generate the complete preview collection from
-the repository root:
+the repository root with Node.js 20.9 or newer:
 
 ```bash
 npm run preview:generate -- --input "/Users/martin/Documents/我的文档/NFT/haku-final-10000/build/images" --output /private/tmp/haku-nft-silhouettes --expected-count 10000 --concurrency 4

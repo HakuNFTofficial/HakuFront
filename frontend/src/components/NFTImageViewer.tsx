@@ -27,14 +27,16 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
         setError(null)
         setImageUrl(null)
         const imagePath = getIPFSImageUrl(nft.file_name)
-        
+        let cancelled = false
         const img = new Image()
         img.onload = () => {
+            if (cancelled) return
             setImageUrl(imagePath)
             setIsLoading(false)
         }
         
         img.onerror = () => {
+            if (cancelled) return
             console.error({
                 event: 'nft_original_load_error',
                 nftId: nft.nft_id,
@@ -46,6 +48,12 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
         }
         
         img.src = imagePath
+
+        return () => {
+            cancelled = true
+            img.onload = null
+            img.onerror = null
+        }
     }, [isOpen, nft.file_name, nft.is_mint, nft.nft_id])
 
     // Save image
@@ -86,20 +94,21 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
 
     // Close on ESC key press
     useEffect(() => {
+        if (!isOpen || nft.is_mint !== 2) return
+
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen && nft.is_mint === 2) {
+            if (e.key === 'Escape') {
                 onClose()
             }
         }
-        
-        if (isOpen && nft.is_mint === 2) {
-            document.addEventListener('keydown', handleEscape)
-            document.body.style.overflow = 'hidden' // Prevent background scrolling
-        }
+
+        const previousOverflow = document.body.style.overflow
+        document.addEventListener('keydown', handleEscape)
+        document.body.style.overflow = 'hidden' // Prevent background scrolling
         
         return () => {
             document.removeEventListener('keydown', handleEscape)
-            document.body.style.overflow = ''
+            document.body.style.overflow = previousOverflow
         }
     }, [isOpen, nft.is_mint, onClose])
 
