@@ -11,7 +11,7 @@ import {
     getBurnConfirmationMessage,
     waitForBurnSynchronization,
 } from '../nft/burnFlow'
-import { NFT_PREVIEW_LIMIT } from '../nft/displayPolicy'
+import { getNftPage } from '../nft/displayPolicy'
 
 interface NFT {
     nft_id: number
@@ -45,6 +45,8 @@ interface NFTSectionProps {
 export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
     const { address } = useAccount()
     const [nfts, setNfts] = useState<NFT[]>([])
+    const [currentPage, setCurrentPage] = useState(1)
+    const [copied, setCopied] = useState(false)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [mintingNftId, setMintingNftId] = useState<number | null>(null) // NFT ID currently minting
@@ -614,6 +616,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
 
     // ✅ When user address changes, clear all states (including approvedNftIds)
     useEffect(() => {
+        setCurrentPage(1)
         if (!address) {
             setNfts([])
             setApprovedNftIds(new Set())
@@ -622,6 +625,14 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             setBurningNftId(null)
         }
     }, [address])
+
+    const nftPage = getNftPage(nfts, currentPage)
+
+    useEffect(() => {
+        if (currentPage !== nftPage.currentPage) {
+            setCurrentPage(nftPage.currentPage)
+        }
+    }, [currentPage, nftPage.currentPage])
 
     if (!address) {
         return (
@@ -643,7 +654,6 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
     }
 
     // Copy contract address feature
-    const [copied, setCopied] = useState(false)
     const handleCopyContractAddress = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
         e.stopPropagation()
@@ -684,8 +694,6 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             setTimeout(() => setCopied(false), 2000)
         }
     }
-
-    const previewNfts = nfts.slice(0, NFT_PREVIEW_LIMIT)
 
     return (
         <div>
@@ -734,8 +742,9 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                     </div>
                 </div>
             ) : (
-                <div className="grid grid-cols-2 gap-4">
-                    {previewNfts.map((nft) => {
+                <>
+                    <div className="grid grid-cols-2 gap-4">
+                    {nftPage.items.map((nft) => {
                         const isApproved = approvedNftIds.has(nft.nft_id)
                         const canMint = nft.all_chips_owned && nft.is_mint === 0
                         console.log(`[NFTSection] Rendering NFT #${nft.nft_id}:`, {
@@ -1160,7 +1169,34 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                         </div>
                         )
                     })}
-                </div>
+                    </div>
+                    {nftPage.totalPages > 1 && (
+                        <nav
+                            aria-label="NFT card pagination"
+                            className="mt-4 flex items-center justify-center gap-3"
+                        >
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage(page => Math.max(1, page - 1))}
+                                disabled={nftPage.currentPage === 1}
+                                className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs text-gray-200 transition-colors hover:border-gray-500 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                Previous
+                            </button>
+                            <span className="min-w-16 text-center text-xs text-gray-400">
+                                {nftPage.currentPage} / {nftPage.totalPages}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setCurrentPage(page => Math.min(nftPage.totalPages, page + 1))}
+                                disabled={nftPage.currentPage === nftPage.totalPages}
+                                className="rounded-lg border border-gray-700 px-3 py-1.5 text-xs text-gray-200 transition-colors hover:border-gray-500 disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                Next
+                            </button>
+                        </nav>
+                    )}
+                </>
             )}
         </div>
     )

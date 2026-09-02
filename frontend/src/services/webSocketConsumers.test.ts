@@ -33,13 +33,12 @@ describe('realtime components', () => {
         )
     })
 
-    it('bounds the homepage preview instead of rendering every owned NFT', () => {
+    it('paginates the homepage instead of rendering every owned NFT', () => {
         const source = readComponent('../components/NFTSection.tsx')
 
-        expect(source).toContain(
-            'const previewNfts = nfts.slice(0, NFT_PREVIEW_LIMIT)',
-        )
-        expect(source).toContain('previewNfts.map((nft)')
+        expect(source).toContain('const nftPage = getNftPage(nfts, currentPage)')
+        expect(source).toContain('nftPage.items.map((nft)')
+        expect(source).toContain('aria-label="NFT card pagination"')
         expect(source).not.toContain('nfts.map((nft)')
     })
 
