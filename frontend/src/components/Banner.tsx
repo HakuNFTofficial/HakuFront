@@ -40,7 +40,7 @@ function processImageUrl(imageUrl: string | null | undefined, fileName?: string 
 
   
  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
- return imageUrl
+ return convertIPFSToHttp(imageUrl)
  }
 
    

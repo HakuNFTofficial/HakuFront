@@ -56,5 +56,24 @@ export function convertIPFSToHttp(ipfsUrl: string): string {
         const ipfsHash = ipfsUrl.replace('ipfs://', '')
         return `${IPFS_CONFIG.GATEWAY}${ipfsHash}`
     }
+
+    try {
+        const url = new URL(ipfsUrl)
+        const ipfsPathMarker = '/ipfs/'
+        const ipfsPathIndex = url.pathname.indexOf(ipfsPathMarker)
+
+        if (ipfsPathIndex !== -1) {
+            const ipfsPath = url.pathname.slice(
+                ipfsPathIndex + ipfsPathMarker.length,
+            )
+
+            if (ipfsPath) {
+                return `${IPFS_CONFIG.GATEWAY}${ipfsPath}${url.search}${url.hash}`
+            }
+        }
+    } catch {
+        // Preserve non-URL values so callers can handle them as before.
+    }
+
     return ipfsUrl
 }

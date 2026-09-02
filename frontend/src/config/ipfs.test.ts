@@ -41,6 +41,28 @@ describe('IPFS configuration', () => {
     )
   })
 
+  it('rewrites a legacy HTTP IPFS gateway through the selected gateway', async () => {
+    vi.stubEnv('VITE_IPFS_GATEWAY', '')
+    const { convertIPFSToHttp } = await import('./ipfs')
+
+    expect(
+      convertIPFSToHttp(
+        'https://nftstorage.link/ipfs/QmImage/2828.png?download=1',
+      ),
+    ).toBe(
+      'https://gateway.pinata.cloud/ipfs/QmImage/2828.png?download=1',
+    )
+  })
+
+  it('preserves a non-IPFS HTTP image URL', async () => {
+    vi.stubEnv('VITE_IPFS_GATEWAY', '')
+    const { convertIPFSToHttp } = await import('./ipfs')
+
+    expect(convertIPFSToHttp('https://cdn.example.com/2828.png')).toBe(
+      'https://cdn.example.com/2828.png',
+    )
+  })
+
   it('normalizes a gateway override without a trailing slash', async () => {
     vi.stubEnv('VITE_IPFS_GATEWAY', 'https://images.example/ipfs')
     const { getIPFSImageUrl } = await import('./ipfs')
