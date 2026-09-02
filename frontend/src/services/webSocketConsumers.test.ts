@@ -28,12 +28,34 @@ describe('realtime components', () => {
         expect(source).toContain(
             'const requestKey = `${nft.nft_id}-${address}-${nft.owned_chips_count}`',
         )
-        expect(source).toContain('[nft.nft_id, address, nft.owned_chips_count]')
+        expect(source).toContain(
+            '[nft.nft_id, address, nft.owned_chips_count, nft.total_chips_count, nft.all_chips_owned, nft.is_mint]',
+        )
     })
 
-    it('loads chip coordinates for the realtime View All cards', () => {
+    it('bounds the homepage preview instead of rendering every owned NFT', () => {
+        const source = readComponent('../components/NFTSection.tsx')
+
+        expect(source).toContain(
+            'const previewNfts = nfts.slice(0, NFT_PREVIEW_LIMIT)',
+        )
+        expect(source).toContain('previewNfts.map((nft)')
+        expect(source).not.toContain('nfts.map((nft)')
+    })
+
+    it('does not request chip coordinates for a complete NFT', () => {
+        const source = readComponent('../components/NFTImageReveal.tsx')
+
+        expect(source).toContain('if (!needsChipCoordinates(nft))')
+        expect(source).toContain(
+            '[nft.nft_id, address, nft.owned_chips_count, nft.total_chips_count, nft.all_chips_owned, nft.is_mint]',
+        )
+    })
+
+    it('loads lightweight summaries for the realtime View All cards', () => {
         const source = readComponent('../components/Profile.tsx')
 
-        expect(source).toContain('include_chips=true')
+        expect(source).toContain('include_chips=false')
+        expect(source).not.toContain('include_chips=true')
     })
 })

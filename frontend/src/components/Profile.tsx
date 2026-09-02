@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect } from 'react'
 import { useAccount } from 'wagmi'
-import { NFTImageStatic } from './NFTImageStatic'
+import { NFTImageReveal } from './NFTImageReveal'
 import { useWebSocketEvent, useWebSocketReconnect } from '../providers/WebSocketProvider'
 
 // Chip coordinate structure from backend
@@ -48,7 +48,7 @@ export function Profile() {
 
         if (showLoading) setIsLoading(true)
         try {
-            const url = `/api/user-nft-list?user_address=${address}&page=${page}&page_size=20&include_chips=true`
+            const url = `/api/user-nft-list?user_address=${address}&page=${page}&page_size=20&include_chips=false`
             console.log('[Profile] Fetching NFTs:', url)
 
             const response = await fetch(url)
@@ -177,16 +177,7 @@ export function Profile() {
                                 >
                                     {/* NFT Image with Grayscale + Colored Chips */}
                                     <div className="relative aspect-square bg-gray-800">
-                                        <NFTImageStatic
-                                            nftId={nft.nft_id}
-                                            fileName={nft.file_name}
-                                            ownedChips={nft.owned_chips || []}
-                                            ownedChipsCount={nft.owned_chips_count}
-                                            totalChips={nft.total_chips_count}
-                                            isMint={nft.is_mint}
-                                            allChipsOwned={nft.all_chips_owned}
-                                            className="w-full h-full object-contain"
-                                        />
+                                        <NFTImageReveal nft={nft} />
                                         
                                         {/* Status Badge - Top Left */}
                                         <div className="absolute top-2 left-2 z-10">

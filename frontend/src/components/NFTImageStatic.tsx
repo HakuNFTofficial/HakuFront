@@ -137,6 +137,8 @@ export function NFTImageStatic({ nftId, fileName, ownedChips, ownedChipsCount, i
             <img
                 src={imageUrl}
                 alt={`NFT #${nftId}`}
+                loading="lazy"
+                decoding="async"
                 className="absolute inset-0 w-full h-full object-contain"
                 onLoad={handleImageLoad}
                 onError={handleImageError}

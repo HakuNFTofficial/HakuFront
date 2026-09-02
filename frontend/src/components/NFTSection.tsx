@@ -11,6 +11,7 @@ import {
     getBurnConfirmationMessage,
     waitForBurnSynchronization,
 } from '../nft/burnFlow'
+import { NFT_PREVIEW_LIMIT } from '../nft/displayPolicy'
 
 interface NFT {
     nft_id: number
@@ -684,6 +685,8 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
         }
     }
 
+    const previewNfts = nfts.slice(0, NFT_PREVIEW_LIMIT)
+
     return (
         <div>
             <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
@@ -732,7 +735,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                 </div>
             ) : (
                 <div className="grid grid-cols-2 gap-4">
-                    {nfts.map((nft) => {
+                    {previewNfts.map((nft) => {
                         const isApproved = approvedNftIds.has(nft.nft_id)
                         const canMint = nft.all_chips_owned && nft.is_mint === 0
                         console.log(`[NFTSection] Rendering NFT #${nft.nft_id}:`, {

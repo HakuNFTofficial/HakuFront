@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { getIPFSImageUrl } from '../config/ipfs'
+import { needsChipCoordinates } from '../nft/displayPolicy'
 import { startAnimationFrameLoop } from '../services/animationFrameLoop'
 
 interface Chip {
@@ -99,6 +100,13 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
     // Effect 1: Get user-owned chips list (single responsibility: only handles API request)
     // Dependencies: only depends on nft_id and address, re-request only when these values change
     useEffect(() => {
+        if (!needsChipCoordinates(nft)) {
+            setChips([])
+            setError(null)
+            fetchChipsRequestRef.current = null
+            return
+        }
+
         // Responsibility 1: Validate required parameters
         if (!nft.nft_id || !address) {
             if (!nft.nft_id) {
@@ -272,7 +280,7 @@ export function NFTImageReveal({ nft }: NFTImageRevealProps) {
             // Note: Don't clear hasFetchedChipsRef as it prevents duplicate requests
             // To re-request, trigger by changing nft_id or address
         }
-    }, [nft.nft_id, address, nft.owned_chips_count])
+    }, [nft.nft_id, address, nft.owned_chips_count, nft.total_chips_count, nft.all_chips_owned, nft.is_mint])
 
     // Effect 2: Use dual-layer canvas for rendering
     // Logic: 1. Bottom canvas: draw full image (converted to grayscale via CSS filter) 2. Top canvas: draw colored chips regions
