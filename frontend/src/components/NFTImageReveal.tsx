@@ -20,6 +20,7 @@ interface NFTImageRevealProps {
 }
 
 export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
+    const squareMediaClassName = 'relative aspect-square w-full'
     const [failedUrl, setFailedUrl] = useState<string | null>(null)
     const [loadedPreview, setLoadedPreview] = useState<HTMLImageElement | null>(null)
     const source = resolveNftImageSource(nft)
@@ -62,8 +63,10 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
             : 'Preview unavailable'
 
         return (
-            <div className="flex h-full w-full items-center justify-center bg-gray-800 text-sm text-gray-400">
-                {label}
+            <div className={squareMediaClassName}>
+                <div className="flex h-full w-full items-center justify-center bg-gray-800 text-sm text-gray-400">
+                    {label}
+                </div>
             </div>
         )
     }
@@ -110,7 +113,7 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
         </div>
     ) : image
 
-    return source.kind === 'original'
+    const content = source.kind === 'original'
         && onViewOriginal
         && canViewNftOriginal(nft) ? (
         <button
@@ -123,5 +126,11 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
         </button>
     ) : (
         <div className="h-full w-full">{preview}</div>
+    )
+
+    return (
+        <div className={squareMediaClassName}>
+            {content}
+        </div>
     )
 }

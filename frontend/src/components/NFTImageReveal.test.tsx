@@ -27,6 +27,14 @@ const nft = {
     owned_chips: ownedChips,
 }
 
+function expectSquareMediaRoot(container: HTMLElement) {
+    expect(container.firstElementChild).toHaveClass(
+        'relative',
+        'aspect-square',
+        'w-full',
+    )
+}
+
 describe('NFTImageReveal', () => {
     beforeEach(() => {
         vi.stubEnv('VITE_IPFS_PREVIEW_CID', 'bafy-preview')
@@ -39,8 +47,9 @@ describe('NFTImageReveal', () => {
 
     it.each([0, 1])('renders only the silhouette for is_mint=%i', (is_mint) => {
         const fetchSpy = vi.spyOn(globalThis, 'fetch')
-        render(<NFTImageReveal nft={{ ...nft, is_mint }} />)
+        const { container } = render(<NFTImageReveal nft={{ ...nft, is_mint }} />)
 
+        expectSquareMediaRoot(container)
         const preview = screen.getByRole('img', { name: 'NFT #3995 silhouette' })
         expect(preview)
             .toHaveAttribute('src', expect.stringContaining('/bafy-preview/3995.webp'))
@@ -55,8 +64,14 @@ describe('NFTImageReveal', () => {
 
     it('renders the original only for is_mint=2 and exposes the viewer action', () => {
         const onViewOriginal = vi.fn()
-        render(<NFTImageReveal nft={{ ...nft, is_mint: 2 }} onViewOriginal={onViewOriginal} />)
+        const { container } = render(
+            <NFTImageReveal
+                nft={{ ...nft, is_mint: 2 }}
+                onViewOriginal={onViewOriginal}
+            />,
+        )
 
+        expectSquareMediaRoot(container)
         expect(screen.getByRole('img', { name: 'NFT #3995' }))
             .toHaveAttribute('src', expect.stringContaining('/3995.png'))
         fireEvent.click(screen.getByRole('button', { name: 'View original NFT #3995' }))
@@ -67,8 +82,9 @@ describe('NFTImageReveal', () => {
         vi.stubEnv('VITE_IPFS_PREVIEW_CID', '')
         const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
 
-        render(<NFTImageReveal nft={{ ...nft, is_mint: 0 }} />)
+        const { container } = render(<NFTImageReveal nft={{ ...nft, is_mint: 0 }} />)
 
+        expectSquareMediaRoot(container)
         expect(screen.getByText('Preview unavailable')).toBeInTheDocument()
         expect(screen.queryByRole('img')).not.toBeInTheDocument()
         expect(log).toHaveBeenCalledWith(expect.objectContaining({
