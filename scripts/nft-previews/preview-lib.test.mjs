@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { mkdtemp, mkdir, readFile, rm } from 'node:fs/promises'
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -90,6 +90,24 @@ test('rejects source artwork with unexpected dimensions', async () => {
         }),
         /Invalid source dimensions: 3\.png \(2999x3000\), expected 3000x3000/,
     )
+})
+
+test('rejects a preview manifest from a different artifact version', async () => {
+    const manifestPath = join(outputDir, 'manifest.json')
+    const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+    const currentSettings = manifest.settings
+    manifest.settings = { ...currentSettings, version: 1 }
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+
+    try {
+        await assert.rejects(
+            validatePreviewCollection({ inputDir, outputDir, expectedCount: 2 }),
+            /Manifest settings mismatch.*expected version=2.*received version=1/,
+        )
+    } finally {
+        manifest.settings = currentSettings
+        await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+    }
 })
 
 test('rejects the wrong required source count before writing', async () => {

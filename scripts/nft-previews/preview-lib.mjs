@@ -171,6 +171,15 @@ export async function validatePreviewCollection({
 
     const manifestPath = join(previewDirectory, 'manifest.json')
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+    for (const [field, expected] of Object.entries(PREVIEW_SETTINGS)) {
+        const received = manifest.settings?.[field]
+        if (received !== expected) {
+            throw new Error(
+                `Manifest settings mismatch in ${manifestPath}: `
+                + `expected ${field}=${expected}, received ${field}=${received ?? 'missing'}`,
+            )
+        }
+    }
     if (
         manifest.sourceCount !== requiredCount
         || manifest.outputCount !== requiredCount
