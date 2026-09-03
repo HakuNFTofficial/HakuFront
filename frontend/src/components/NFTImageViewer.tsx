@@ -19,27 +19,42 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
 
     // Load image
     useEffect(() => {
-        if (!isOpen || !nft.file_name) {
+        if (!isOpen || nft.is_mint !== 2 || !nft.file_name) {
             return
         }
 
         setIsLoading(true)
         setError(null)
+        setImageUrl(null)
         const imagePath = getIPFSImageUrl(nft.file_name)
-        
+        let cancelled = false
         const img = new Image()
         img.onload = () => {
+            if (cancelled) return
             setImageUrl(imagePath)
             setIsLoading(false)
         }
         
         img.onerror = () => {
+            if (cancelled) return
+            console.error({
+                event: 'nft_original_load_error',
+                nftId: nft.nft_id,
+                status: nft.is_mint,
+                imageUrl: imagePath,
+            })
             setError('Unable to load image')
             setIsLoading(false)
         }
         
         img.src = imagePath
-    }, [isOpen, nft.file_name])
+
+        return () => {
+            cancelled = true
+            img.onload = null
+            img.onerror = null
+        }
+    }, [isOpen, nft.file_name, nft.is_mint, nft.nft_id])
 
     // Save image
     const handleSaveImage = async () => {
@@ -79,29 +94,34 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
 
     // Close on ESC key press
     useEffect(() => {
+        if (!isOpen || nft.is_mint !== 2) return
+
         const handleEscape = (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && isOpen) {
+            if (e.key === 'Escape') {
                 onClose()
             }
         }
-        
-        if (isOpen) {
-            document.addEventListener('keydown', handleEscape)
-            document.body.style.overflow = 'hidden' // Prevent background scrolling
-        }
+
+        const previousOverflow = document.body.style.overflow
+        document.addEventListener('keydown', handleEscape)
+        document.body.style.overflow = 'hidden' // Prevent background scrolling
         
         return () => {
             document.removeEventListener('keydown', handleEscape)
-            document.body.style.overflow = ''
+            document.body.style.overflow = previousOverflow
         }
-    }, [isOpen, onClose])
+    }, [isOpen, nft.is_mint, onClose])
 
-    if (!isOpen) return null
+    if (!isOpen || nft.is_mint !== 2) return null
 
     return (
         <div 
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm"
             onClick={onClose}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`nft-image-viewer-title-${nft.nft_id}`}
+            data-testid="nft-image-viewer-backdrop"
         >
             <div 
                 className="relative bg-[#1a1b23] rounded-2xl shadow-2xl max-w-[90vw] max-h-[90vh] flex flex-col"
@@ -109,7 +129,10 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
             >
                 {/* Header toolbar */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-800">
-                    <h2 className="text-white font-bold text-lg">
+                    <h2
+                        id={`nft-image-viewer-title-${nft.nft_id}`}
+                        className="text-white font-bold text-lg"
+                    >
                         NFT #{nft.nft_id}
                     </h2>
                     <div className="flex items-center gap-2">
@@ -137,6 +160,7 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
                         {/* Close button */}
                         <button
                             onClick={onClose}
+                            aria-label={`Close original NFT #${nft.nft_id}`}
                             className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
                         >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -170,4 +194,3 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
         </div>
     )
 }
-

@@ -38,6 +38,19 @@ export function getIPFSImageUrl(fileName: string): string {
 }
 
 /**
+ * Build an IPFS URL for a generated lightweight NFT silhouette.
+ * The preview collection is a release artifact and must be configured explicitly.
+ */
+export function getIPFSPreviewUrl(fileName: string): string {
+    const previewCID = import.meta.env.VITE_IPFS_PREVIEW_CID?.trim() || ''
+    if (!previewCID) {
+        throw new Error('Missing required VITE_IPFS_PREVIEW_CID')
+    }
+
+    return `${IPFS_CONFIG.GATEWAY}${previewCID}/${fileName}`
+}
+
+/**
  * Build IPFS metadata URL
  * @param fileName File name (e.g.: 22.json)
  * @returns Complete IPFS HTTP URL

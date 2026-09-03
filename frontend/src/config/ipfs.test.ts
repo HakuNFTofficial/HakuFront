@@ -71,4 +71,23 @@ describe('IPFS configuration', () => {
       'https://images.example/ipfs/QmWALFJVacNc1EpMKdxMuCedDVcNwmWoc3L2jqX8erAb6L/572.png',
     )
   })
+
+  it('builds preview URLs from the configured immutable preview CID', async () => {
+    vi.stubEnv('VITE_IPFS_GATEWAY', 'https://images.example/ipfs')
+    vi.stubEnv('VITE_IPFS_PREVIEW_CID', 'bafy-preview')
+    const { getIPFSPreviewUrl } = await import('./ipfs')
+
+    expect(getIPFSPreviewUrl('3995.webp')).toBe(
+      'https://images.example/ipfs/bafy-preview/3995.webp',
+    )
+  })
+
+  it('fails explicitly when the preview CID is missing', async () => {
+    vi.stubEnv('VITE_IPFS_PREVIEW_CID', '')
+    const { getIPFSPreviewUrl } = await import('./ipfs')
+
+    expect(() => getIPFSPreviewUrl('3995.webp')).toThrowError(
+      'Missing required VITE_IPFS_PREVIEW_CID',
+    )
+  })
 })
