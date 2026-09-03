@@ -14,12 +14,15 @@ import {
 let taskDir
 let inputDir
 let outputDir
+let invalidInputDir
 
 before(async () => {
     taskDir = await mkdtemp(join(tmpdir(), 'haku-preview-test-'))
     inputDir = join(taskDir, 'input')
     outputDir = join(taskDir, 'output')
+    invalidInputDir = join(taskDir, 'invalid-input')
     await mkdir(inputDir)
+    await mkdir(invalidInputDir)
 
     for (const [name, colour] of [['1.png', '#ff0088'], ['2.png', '#0088ff']]) {
         await sharp({
@@ -31,6 +34,15 @@ before(async () => {
             },
         }).png().toFile(join(inputDir, name))
     }
+
+    await sharp({
+        create: {
+            width: 2999,
+            height: 3000,
+            channels: 3,
+            background: '#ff0088',
+        },
+    }).png().toFile(join(invalidInputDir, '3.png'))
 })
 
 after(async () => {
@@ -53,14 +65,31 @@ test('generates deterministic 512px WebP previews and a manifest', async () => {
     assert.equal(metadata.width, 512)
     assert.equal(metadata.height, 512)
 
+    const stats = await sharp(join(outputDir, '1.webp')).stats()
+    assert.notEqual(stats.channels[0].mean, stats.channels[1].mean)
+
     const manifest = JSON.parse(
         await readFile(join(outputDir, 'manifest.json'), 'utf8'),
     )
+    assert.equal(manifest.settings.version, 2)
+    assert.equal(manifest.settings.sourceWidth, 3000)
+    assert.equal(manifest.settings.sourceHeight, 3000)
     assert.equal(manifest.settings.width, 512)
     assert.equal(manifest.settings.height, 512)
     assert.equal(manifest.settings.quality, 50)
     assert.equal(manifest.sourceCount, 2)
     assert.equal(manifest.outputCount, 2)
+})
+
+test('rejects source artwork with unexpected dimensions', async () => {
+    await assert.rejects(
+        generatePreviewCollection({
+            inputDir: invalidInputDir,
+            outputDir: join(taskDir, 'invalid-dimensions'),
+            expectedCount: 1,
+        }),
+        /Invalid source dimensions: 3\.png \(2999x3000\), expected 3000x3000/,
+    )
 })
 
 test('rejects the wrong required source count before writing', async () => {
