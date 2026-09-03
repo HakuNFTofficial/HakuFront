@@ -50,7 +50,7 @@ export function Profile() {
 
         if (showLoading) setIsLoading(true)
         try {
-            const url = `/api/user-nft-list?user_address=${address}&page=${page}&page_size=20&include_chips=false`
+            const url = `/api/user-nft-list?user_address=${address}&page=${page}&page_size=20&include_chips=true`
             console.log('[Profile] Fetching NFTs:', url)
 
             const response = await fetch(url)

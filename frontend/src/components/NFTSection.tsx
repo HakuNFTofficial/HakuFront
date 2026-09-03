@@ -12,6 +12,7 @@ import {
     waitForBurnSynchronization,
 } from '../nft/burnFlow'
 import { getNftPage } from '../nft/displayPolicy'
+import type { ChipCoordinate } from '../nft/chipOverlay'
 
 interface NFT {
     nft_id: number
@@ -19,6 +20,7 @@ interface NFT {
     all_chips_owned: boolean
     owned_chips_count: number
     total_chips_count: number
+    owned_chips?: ChipCoordinate[]
     is_mint: number // 0: Not requested, 1: In progress, 2: Minted
     token_id?: string | null // On-chain tokenId returned by backend (string format, e.g. "21", "20"), displayed after successful minting
 }
@@ -198,42 +200,17 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             return
         }
 
-        if (nftUpdate.nfts && nftUpdate.nfts.length > 0) {
-            setNfts(nftUpdate.nfts)
-            setApprovedNftIds(prev => {
-                const newSet = new Set<number>()
-                nftUpdate.nfts.forEach((nft: NFT) => {
-                    if (nft.is_mint === 0 && prev.has(nft.nft_id)) {
-                        newSet.add(nft.nft_id)
-                    }
-                })
-                return newSet
-            })
-        } else {
-            setNfts([])
-            setApprovedNftIds(new Set())
-        }
-
-        setBurningNftId(currentNftId => {
-            if (currentNftId === null) return null
-            const burnedNft = nftUpdate.nfts.find((nft) => nft.nft_id === currentNftId)
-            return !burnedNft || (burnedNft.is_mint === 0 && !burnedNft.token_id)
-                ? null
-                : currentNftId
-        })
-
-        setError(null)
-        setIsLoading(false)
+        void fetchNFTSnapshot(false)
     }, Boolean(address))
 
-    const fetchNFTSnapshot = useCallback(async () => {
+    const fetchNFTSnapshot = useCallback(async (showLoading = true) => {
         if (!address) return
 
-            setIsLoading(true)
+            if (showLoading) setIsLoading(true)
             setError(null)
 
             try {
-                const apiUrl = `/api/query-mint?user_address=${address}&include_chips=false`
+                const apiUrl = `/api/query-mint?user_address=${address}&include_chips=true`
                 const response = await fetch(apiUrl)
                 if (!response.ok) {
                     const errorText = await response.text()
@@ -262,7 +239,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                 setError(`Failed to load NFTs: ${err instanceof Error ? err.message : 'Unknown error'}`)
                 setNfts([])
             } finally {
-                setIsLoading(false)
+                if (showLoading) setIsLoading(false)
             }
     }, [address])
 
@@ -371,7 +348,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             // Refresh NFT list - continuous polling until backend status updates to is_mint === 2
             const fetchNFTs = async () => {
                 try {
-                    const apiUrl = `/api/query-mint?user_address=${address}&include_chips=false`
+                    const apiUrl = `/api/query-mint?user_address=${address}&include_chips=true`
                     const res = await fetch(apiUrl)
                     if (res.ok) {
                         const result = await res.json()
@@ -472,7 +449,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
         console.log('[NFTSection] ✅ Burn transaction confirmed, waiting for backend synchronization')
 
         const fetchSnapshot = async (): Promise<NFTQueryResponse> => {
-            const apiUrl = `/api/query-mint?user_address=${address}&include_chips=false`
+            const apiUrl = `/api/query-mint?user_address=${address}&include_chips=true`
             const response = await fetch(apiUrl)
             if (!response.ok) {
                 throw new Error(`Failed to refresh NFTs: ${response.status} ${response.statusText}`)

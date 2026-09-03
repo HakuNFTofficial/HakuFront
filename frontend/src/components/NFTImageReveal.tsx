@@ -6,18 +6,22 @@ import {
     resolveNftImageSource,
     type NFTImageState,
 } from '../nft/imagePolicy'
+import type { ChipCoordinate } from '../nft/chipOverlay'
+import { NFTChipOverlay } from './NFTChipOverlay'
 
 interface NFTImageRevealProps {
     nft: NFTImageState & {
         all_chips_owned: boolean
         owned_chips_count: number
         total_chips_count: number
+        owned_chips?: ChipCoordinate[]
     }
     onViewOriginal?: () => void
 }
 
 export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
     const [failedUrl, setFailedUrl] = useState<string | null>(null)
+    const [loadedPreview, setLoadedPreview] = useState<HTMLImageElement | null>(null)
     const source = resolveNftImageSource(nft)
     let imageUrl: string | null = null
     let missingFields: string[] = []
@@ -49,6 +53,7 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
 
     useEffect(() => {
         setFailedUrl(null)
+        setLoadedPreview(null)
     }, [imageUrl])
 
     if (!source.ok || !imageUrl || failedUrl === imageUrl) {
@@ -74,18 +79,36 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
         setFailedUrl(imageUrl)
     }
 
+    const isPreview = source.kind === 'preview'
     const image = (
         <img
             src={imageUrl}
-            alt={source.kind === 'preview'
+            alt={isPreview
                 ? `NFT #${nft.nft_id} silhouette`
                 : `NFT #${nft.nft_id}`}
             loading="lazy"
             decoding="async"
-            className="h-full w-full object-contain"
+            className={`h-full w-full object-contain ${isPreview ? 'nft-preview-shadow' : ''}`}
+            onLoad={(event) => {
+                if (isPreview) setLoadedPreview(event.currentTarget)
+            }}
             onError={handleImageError}
         />
     )
+
+    const preview = isPreview ? (
+        <div className="relative h-full w-full overflow-hidden bg-[#171922]">
+            {image}
+            {loadedPreview && (
+                <NFTChipOverlay
+                    image={loadedPreview}
+                    nftId={nft.nft_id}
+                    expectedCount={nft.owned_chips_count}
+                    chips={nft.owned_chips ?? []}
+                />
+            )}
+        </div>
+    ) : image
 
     return source.kind === 'original'
         && onViewOriginal
@@ -99,6 +122,6 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
             {image}
         </button>
     ) : (
-        <div className="h-full w-full">{image}</div>
+        <div className="h-full w-full">{preview}</div>
     )
 }

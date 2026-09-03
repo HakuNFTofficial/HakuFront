@@ -7,12 +7,24 @@ vi.mock('wagmi', () => ({
     useAccount: () => ({ address: '0x1234' }),
 }))
 
+vi.mock('./NFTChipOverlay', () => ({
+    NFTChipOverlay: () => <div data-testid="nft-chip-overlay" />,
+}))
+
+const ownedChips = Array.from({ length: 23 }, (_, index) => ({
+    x: (index % 10) * 30,
+    y: Math.floor(index / 10) * 30,
+    w: 30,
+    h: 30,
+}))
+
 const nft = {
     nft_id: 3995,
     file_name: '3995.png',
     all_chips_owned: false,
     owned_chips_count: 23,
     total_chips_count: 10_000,
+    owned_chips: ownedChips,
 }
 
 describe('NFTImageReveal', () => {
@@ -29,8 +41,12 @@ describe('NFTImageReveal', () => {
         const fetchSpy = vi.spyOn(globalThis, 'fetch')
         render(<NFTImageReveal nft={{ ...nft, is_mint }} />)
 
-        expect(screen.getByRole('img', { name: 'NFT #3995 silhouette' }))
+        const preview = screen.getByRole('img', { name: 'NFT #3995 silhouette' })
+        expect(preview)
             .toHaveAttribute('src', expect.stringContaining('/bafy-preview/3995.webp'))
+        expect(preview).toHaveClass('nft-preview-shadow')
+        fireEvent.load(preview)
+        expect(screen.getByTestId('nft-chip-overlay')).toBeInTheDocument()
         expect(screen.getByRole('img').getAttribute('src')).not.toContain(
             '/QmWALFJVacNc1EpMKdxMuCedDVcNwmWoc3L2jqX8erAb6L/',
         )

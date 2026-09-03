@@ -13,6 +13,11 @@ body {
   min-height: 100vh;
 }
 
+.nft-preview-shadow {
+  filter: grayscale(1) blur(10px) brightness(0.16) contrast(0.72);
+  transform: scale(1.04);
+}
+
 /* Hide number input arrows */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {

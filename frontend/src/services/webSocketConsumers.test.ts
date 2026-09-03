@@ -22,12 +22,12 @@ describe('realtime components', () => {
         expect(source).not.toContain('/ws`')
     })
 
-    it('does not fetch chip coordinates to render NFT silhouettes', () => {
+    it('renders coordinates without restoring the legacy per-NFT chip request', () => {
         const source = readComponent('../components/NFTImageReveal.tsx')
 
         expect(source).not.toContain('/api/nft-user-chips-batch')
         expect(source).not.toContain('new Image()')
-        expect(source).not.toContain('<canvas')
+        expect(source).toContain('NFTChipOverlay')
     })
 
     it('paginates the homepage instead of rendering every owned NFT', () => {
@@ -39,10 +39,14 @@ describe('realtime components', () => {
         expect(source).not.toContain('nfts.map((nft)')
     })
 
-    it('loads lightweight summaries for the realtime View All cards', () => {
-        const source = readComponent('../components/Profile.tsx')
+    it('loads coordinate-only chip data in both NFT card surfaces', () => {
+        const profileSource = readComponent('../components/Profile.tsx')
+        const homeSource = readComponent('../components/NFTSection.tsx')
 
-        expect(source).toContain('include_chips=false')
-        expect(source).not.toContain('include_chips=true')
+        expect(profileSource).toContain('include_chips=true')
+        expect(profileSource).not.toContain('include_chips=false')
+        expect(homeSource).toContain('include_chips=true')
+        expect(homeSource).not.toContain('include_chips=false')
+        expect(homeSource).toContain('void fetchNFTSnapshot(false)')
     })
 })
