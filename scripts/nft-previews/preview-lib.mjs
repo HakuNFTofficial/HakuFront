@@ -4,11 +4,11 @@ import { extname, join, parse } from 'node:path'
 import sharp from 'sharp'
 
 export const PREVIEW_SETTINGS = Object.freeze({
-    version: 1,
+    version: 2,
+    sourceWidth: 3000,
+    sourceHeight: 3000,
     width: 512,
     height: 512,
-    blurSigma: 12,
-    brightness: 0.35,
     quality: 50,
 })
 
@@ -88,11 +88,20 @@ export async function generatePreviewCollection({
         const sourcePath = join(sourceDirectory, sourceName)
         const previewPath = join(previewDirectory, previewName)
 
+        const sourceMetadata = await sharp(sourcePath).metadata()
+        if (
+            sourceMetadata.width !== PREVIEW_SETTINGS.sourceWidth
+            || sourceMetadata.height !== PREVIEW_SETTINGS.sourceHeight
+        ) {
+            throw new Error(
+                `Invalid source dimensions: ${sourceName} `
+                + `(${sourceMetadata.width ?? 'unknown'}x${sourceMetadata.height ?? 'unknown'}), `
+                + `expected ${PREVIEW_SETTINGS.sourceWidth}x${PREVIEW_SETTINGS.sourceHeight}`,
+            )
+        }
+
         await sharp(sourcePath)
             .resize(PREVIEW_SETTINGS.width, PREVIEW_SETTINGS.height, { fit: 'fill' })
-            .grayscale()
-            .blur(PREVIEW_SETTINGS.blurSigma)
-            .modulate({ brightness: PREVIEW_SETTINGS.brightness })
             .webp({ quality: PREVIEW_SETTINGS.quality })
             .toFile(previewPath)
 
@@ -162,6 +171,15 @@ export async function validatePreviewCollection({
 
     const manifestPath = join(previewDirectory, 'manifest.json')
     const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+    for (const [field, expected] of Object.entries(PREVIEW_SETTINGS)) {
+        const received = manifest.settings?.[field]
+        if (received !== expected) {
+            throw new Error(
+                `Manifest settings mismatch in ${manifestPath}: `
+                + `expected ${field}=${expected}, received ${field}=${received ?? 'missing'}`,
+            )
+        }
+    }
     if (
         manifest.sourceCount !== requiredCount
         || manifest.outputCount !== requiredCount
