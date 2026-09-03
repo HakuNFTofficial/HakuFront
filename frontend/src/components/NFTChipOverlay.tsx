@@ -262,13 +262,13 @@ export function NFTChipOverlay({
                 ref={colorCanvasRef}
                 width={NFT_PREVIEW_SIZE}
                 height={NFT_PREVIEW_SIZE}
-                className="absolute inset-0 h-full w-full"
+                className="absolute inset-0 h-full w-full object-contain"
             />
             <canvas
                 ref={sparkleCanvasRef}
                 width={NFT_PREVIEW_SIZE}
                 height={NFT_PREVIEW_SIZE}
-                className="absolute inset-0 h-full w-full"
+                className="absolute inset-0 h-full w-full object-contain"
             />
         </div>
     )

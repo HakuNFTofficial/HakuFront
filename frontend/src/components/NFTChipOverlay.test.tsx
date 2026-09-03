@@ -146,4 +146,23 @@ describe('NFTChipOverlay', () => {
         expect(colorContext.drawImage).toHaveBeenCalledOnce()
         expect(requestAnimationFrame).not.toHaveBeenCalled()
     })
+
+    it('keeps both canvas layers contained inside the square media boundary', () => {
+        render(
+            <NFTChipOverlay
+                image={image}
+                nftId={3995}
+                expectedCount={1}
+                chips={[{ x: 0, y: 0, w: 30, h: 30 }]}
+            />,
+        )
+
+        const overlay = screen.getByTestId('nft-chip-overlay')
+        const canvases = overlay.querySelectorAll('canvas')
+
+        expect(canvases).toHaveLength(2)
+        canvases.forEach((canvas) => {
+            expect(canvas).toHaveClass('h-full', 'w-full', 'object-contain')
+        })
+    })
 })
