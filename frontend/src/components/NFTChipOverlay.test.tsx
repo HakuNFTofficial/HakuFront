@@ -19,7 +19,9 @@ function context() {
         translate: vi.fn(),
         arc: vi.fn(),
         closePath: vi.fn(),
+        createLinearGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
         createRadialGradient: vi.fn(() => ({ addColorStop: vi.fn() })),
+        scale: vi.fn(),
         globalAlpha: 1,
         globalCompositeOperation: 'source-over',
         fillStyle: '',
@@ -34,12 +36,17 @@ describe('NFTChipOverlay', () => {
     const colorContext = context()
     const sparkleContext = context()
     const image = document.createElement('img')
+    let frameCallbacks: FrameRequestCallback[]
 
     beforeEach(() => {
+        frameCallbacks = []
         vi.spyOn(HTMLCanvasElement.prototype, 'getContext')
             .mockReturnValueOnce(colorContext as unknown as CanvasRenderingContext2D)
             .mockReturnValueOnce(sparkleContext as unknown as CanvasRenderingContext2D)
-        vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1))
+        vi.stubGlobal('requestAnimationFrame', vi.fn((callback: FrameRequestCallback) => {
+            frameCallbacks.push(callback)
+            return frameCallbacks.length
+        }))
         vi.stubGlobal('cancelAnimationFrame', vi.fn())
         vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })))
     })
@@ -75,6 +82,32 @@ describe('NFTChipOverlay', () => {
         expect(draw[4]).toBeCloseTo(10.24)
         expect(draw.slice(5)).toEqual(draw.slice(1, 5))
         expect(requestAnimationFrame).toHaveBeenCalledOnce()
+    })
+
+    it('draws a moving multicolored starburst before it lands', () => {
+        vi.spyOn(Math, 'random').mockReturnValue(0)
+
+        render(
+            <NFTChipOverlay
+                image={image}
+                nftId={3995}
+                expectedCount={1}
+                chips={[{ x: 300, y: 600, w: 30, h: 60 }]}
+            />,
+        )
+
+        frameCallbacks[0](0)
+        frameCallbacks[1](750)
+
+        expect(sparkleContext.translate).toHaveBeenCalled()
+        expect(sparkleContext.rotate).toHaveBeenCalled()
+        expect(sparkleContext.scale).toHaveBeenCalledWith(
+            expect.any(Number),
+            expect.any(Number),
+        )
+        expect(sparkleContext.createRadialGradient).toHaveBeenCalled()
+        expect(sparkleContext.createLinearGradient).toHaveBeenCalled()
+        expect(sparkleContext.fill).toHaveBeenCalled()
     })
 
     it('logs missing required coordinates without inventing replacements', () => {
