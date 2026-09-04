@@ -3,19 +3,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NFTImageReveal } from './NFTImageReveal'
 
+const { overlayRenderSpy } = vi.hoisted(() => ({
+    overlayRenderSpy: vi.fn(),
+}))
+
 vi.mock('wagmi', () => ({
     useAccount: () => ({ address: '0x1234' }),
 }))
 
 vi.mock('./NFTChipOverlay', () => ({
     NFTChipOverlay: ({
+        chips,
         onSnapshotReady,
         onSnapshotPending,
     }: {
+        chips: unknown[]
         onSnapshotReady?: (blob: Blob) => void
         onSnapshotPending?: () => void
-    }) => (
-        <div>
+    }) => {
+        overlayRenderSpy(chips)
+        return <div>
             <button
                 type="button"
                 data-testid="nft-chip-overlay"
@@ -29,7 +36,7 @@ vi.mock('./NFTChipOverlay', () => ({
                 onClick={() => onSnapshotPending?.()}
             />
         </div>
-    ),
+    },
 }))
 
 const ownedChips = Array.from({ length: 23 }, (_, index) => ({
@@ -58,6 +65,7 @@ function expectSquareMediaRoot(container: HTMLElement) {
 
 describe('NFTImageReveal', () => {
     beforeEach(() => {
+        overlayRenderSpy.mockClear()
         vi.stubEnv('VITE_IPFS_PREVIEW_CID', 'bafy-preview')
         vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:fragment-png')
         vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
@@ -136,5 +144,22 @@ describe('NFTImageReveal', () => {
         fireEvent.click(screen.getByTestId('nft-chip-overlay'))
         unmount()
         expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:fragment-png')
+    })
+
+    it('keeps missing zero-chip coordinates stable across snapshot rerenders', () => {
+        render(<NFTImageReveal nft={{
+            ...nft,
+            is_mint: 0,
+            owned_chips_count: 0,
+            owned_chips: undefined,
+        }} />)
+        fireEvent.load(screen.getByRole('img', { name: 'NFT #3995 silhouette' }))
+
+        const firstCoordinates = overlayRenderSpy.mock.calls.at(-1)?.[0]
+        fireEvent.click(screen.getByTestId('nft-chip-overlay'))
+        const rerenderedCoordinates = overlayRenderSpy.mock.calls.at(-1)?.[0]
+
+        expect(overlayRenderSpy).toHaveBeenCalledTimes(2)
+        expect(rerenderedCoordinates).toBe(firstCoordinates)
     })
 })

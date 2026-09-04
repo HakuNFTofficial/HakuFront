@@ -2,13 +2,22 @@ import { describe, expect, it, vi } from 'vitest'
 
 import { createFragmentShareImage } from './fragmentShareImage'
 
-function createCanvasHarness(blob: Blob | null = new Blob(['png'], { type: 'image/png' })) {
+function createCanvasHarness(
+    blob: Blob | null = new Blob(['png'], { type: 'image/png' }),
+    pixelValue: (x: number, y: number) => [number, number, number] = () => (
+        [100, 150, 200]
+    ),
+) {
     const pixels = new Uint8ClampedArray(512 * 512 * 4)
-    for (let index = 0; index < pixels.length; index += 4) {
-        pixels[index] = 100
-        pixels[index + 1] = 150
-        pixels[index + 2] = 200
-        pixels[index + 3] = 255
+    for (let y = 0; y < 512; y += 1) {
+        for (let x = 0; x < 512; x += 1) {
+            const index = (y * 512 + x) * 4
+            const [red, green, blue] = pixelValue(x, y)
+            pixels[index] = red
+            pixels[index + 1] = green
+            pixels[index + 2] = blue
+            pixels[index + 3] = 255
+        }
     }
     const context = {
         drawImage: vi.fn(),
@@ -86,6 +95,24 @@ describe('createFragmentShareImage', () => {
         })
 
         expect(context.drawImage).toHaveBeenCalledTimes(3)
+    })
+
+    it('blurs hard edges across both axes before darkening the silhouette', async () => {
+        const { canvas, context } = createCanvasHarness(undefined, (x, y) => (
+            x < 256 && y < 256 ? [255, 255, 255] : [0, 0, 0]
+        ))
+
+        await createFragmentShareImage({
+            image: document.createElement('img'),
+            chips: [],
+            expectedCount: 0,
+            createCanvas: () => canvas as unknown as HTMLCanvasElement,
+        })
+
+        const filtered = context.putImageData.mock.calls[0][0].data
+        const valueAt = (x: number, y: number) => filtered[(y * 512 + x) * 4]
+        expect(valueAt(260, 250)).toBeGreaterThan(valueAt(400, 400))
+        expect(valueAt(250, 260)).toBeGreaterThan(valueAt(400, 400))
     })
 
     it('fails explicitly when the browser cannot create the PNG blob', async () => {

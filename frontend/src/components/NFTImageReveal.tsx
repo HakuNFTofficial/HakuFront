@@ -19,6 +19,8 @@ interface NFTImageRevealProps {
     onViewOriginal?: () => void
 }
 
+const EMPTY_CHIP_COORDINATES: ChipCoordinate[] = []
+
 export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
     const squareMediaClassName = 'relative aspect-square w-full'
     const [failedUrl, setFailedUrl] = useState<string | null>(null)
@@ -26,6 +28,7 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
     const [fragmentSaveUrl, setFragmentSaveUrl] = useState<string | null>(null)
     const fragmentSaveUrlRef = useRef<string | null>(null)
     const source = resolveNftImageSource(nft)
+    const ownedChips = nft.owned_chips ?? EMPTY_CHIP_COORDINATES
     let imageUrl: string | null = null
     let missingFields: string[] = []
 
@@ -134,7 +137,7 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
                     image={loadedPreview}
                     nftId={nft.nft_id}
                     expectedCount={nft.owned_chips_count}
-                    chips={nft.owned_chips ?? []}
+                    chips={ownedChips}
                     onSnapshotReady={handleSnapshotReady}
                     onSnapshotPending={handleSnapshotPending}
                 />
