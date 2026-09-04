@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getIPFSImageUrl, getIPFSPreviewUrl } from '../config/ipfs'
 import {
@@ -19,11 +19,16 @@ interface NFTImageRevealProps {
     onViewOriginal?: () => void
 }
 
+const EMPTY_CHIP_COORDINATES: ChipCoordinate[] = []
+
 export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
     const squareMediaClassName = 'relative aspect-square w-full'
     const [failedUrl, setFailedUrl] = useState<string | null>(null)
     const [loadedPreview, setLoadedPreview] = useState<HTMLImageElement | null>(null)
+    const [fragmentSaveUrl, setFragmentSaveUrl] = useState<string | null>(null)
+    const fragmentSaveUrlRef = useRef<string | null>(null)
     const source = resolveNftImageSource(nft)
+    const ownedChips = nft.owned_chips ?? EMPTY_CHIP_COORDINATES
     let imageUrl: string | null = null
     let missingFields: string[] = []
 
@@ -41,6 +46,28 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
 
     const missingFieldsKey = missingFields.join(',')
 
+    const releaseFragmentSaveUrl = useCallback(() => {
+        if (!fragmentSaveUrlRef.current) return
+        URL.revokeObjectURL(fragmentSaveUrlRef.current)
+        fragmentSaveUrlRef.current = null
+    }, [])
+
+    const handleSnapshotReady = useCallback((blob: Blob) => {
+        const nextUrl = URL.createObjectURL(blob)
+        releaseFragmentSaveUrl()
+        fragmentSaveUrlRef.current = nextUrl
+        setFragmentSaveUrl(nextUrl)
+    }, [releaseFragmentSaveUrl])
+
+    const handleSnapshotPending = useCallback(() => {
+        releaseFragmentSaveUrl()
+        setFragmentSaveUrl(null)
+    }, [releaseFragmentSaveUrl])
+
+    useEffect(() => () => {
+        releaseFragmentSaveUrl()
+    }, [releaseFragmentSaveUrl])
+
     useEffect(() => {
         if (!missingFieldsKey) return
 
@@ -55,7 +82,9 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
     useEffect(() => {
         setFailedUrl(null)
         setLoadedPreview(null)
-    }, [imageUrl])
+        setFragmentSaveUrl(null)
+        releaseFragmentSaveUrl()
+    }, [imageUrl, releaseFragmentSaveUrl])
 
     if (!source.ok || !imageUrl || failedUrl === imageUrl) {
         const label = source.ok && source.kind === 'original'
@@ -85,6 +114,7 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
     const isPreview = source.kind === 'preview'
     const image = (
         <img
+            crossOrigin={isPreview ? 'anonymous' : undefined}
             src={imageUrl}
             alt={isPreview
                 ? `NFT #${nft.nft_id} silhouette`
@@ -107,7 +137,19 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
                     image={loadedPreview}
                     nftId={nft.nft_id}
                     expectedCount={nft.owned_chips_count}
-                    chips={nft.owned_chips ?? []}
+                    chips={ownedChips}
+                    onSnapshotReady={handleSnapshotReady}
+                    onSnapshotPending={handleSnapshotPending}
+                />
+            )}
+            {fragmentSaveUrl && (
+                <img
+                    data-testid="nft-fragment-save-image"
+                    src={fragmentSaveUrl}
+                    alt=""
+                    aria-hidden="true"
+                    draggable={false}
+                    className="absolute inset-0 z-20 h-full w-full opacity-0"
                 />
             )}
         </div>

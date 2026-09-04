@@ -1,7 +1,12 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { createFragmentShareImage } from '../nft/fragmentShareImage'
 import { NFTChipOverlay } from './NFTChipOverlay'
+
+vi.mock('../nft/fragmentShareImage', () => ({
+    createFragmentShareImage: vi.fn(),
+}))
 
 function context() {
     return {
@@ -40,6 +45,9 @@ describe('NFTChipOverlay', () => {
 
     beforeEach(() => {
         frameCallbacks = []
+        vi.mocked(createFragmentShareImage).mockReset().mockResolvedValue(
+            new Blob(['png'], { type: 'image/png' }),
+        )
         vi.spyOn(HTMLCanvasElement.prototype, 'getContext')
             .mockReturnValueOnce(colorContext as unknown as CanvasRenderingContext2D)
             .mockReturnValueOnce(sparkleContext as unknown as CanvasRenderingContext2D)
@@ -126,6 +134,7 @@ describe('NFTChipOverlay', () => {
             event: 'nft_chip_coordinates_invalid',
             nftId: 3995,
             expectedCount: 2,
+            receivedCount: 1,
             validCount: 1,
         })
         expect(colorContext.drawImage).toHaveBeenCalledOnce()
@@ -164,5 +173,77 @@ describe('NFTChipOverlay', () => {
         canvases.forEach((canvas) => {
             expect(canvas).toHaveClass('h-full', 'w-full', 'object-contain')
         })
+    })
+
+    it('delivers a stable promotional PNG after drawing the exact chips', async () => {
+        const onSnapshotReady = vi.fn()
+        const onSnapshotPending = vi.fn()
+
+        render(
+            <NFTChipOverlay
+                image={image}
+                nftId={3995}
+                expectedCount={1}
+                chips={[{ x: 0, y: 0, w: 30, h: 30 }]}
+                onSnapshotReady={onSnapshotReady}
+                onSnapshotPending={onSnapshotPending}
+            />,
+        )
+
+        await waitFor(() => expect(onSnapshotReady).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'image/png' }),
+        ))
+        expect(createFragmentShareImage).toHaveBeenCalledWith({
+            image,
+            expectedCount: 1,
+            chips: [{ x: 0, y: 0, w: 30, h: 30 }],
+        })
+        expect(onSnapshotPending).toHaveBeenCalledOnce()
+    })
+
+    it('logs an actionable error when promotional image export fails', async () => {
+        const log = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+        vi.mocked(createFragmentShareImage).mockRejectedValueOnce(
+            new Error('canvas is tainted'),
+        )
+
+        render(
+            <NFTChipOverlay
+                image={image}
+                nftId={3995}
+                expectedCount={1}
+                chips={[{ x: 0, y: 0, w: 30, h: 30 }]}
+                onSnapshotReady={vi.fn()}
+            />,
+        )
+
+        await waitFor(() => expect(log).toHaveBeenCalledWith({
+            event: 'nft_fragment_share_image_failed',
+            nftId: 3995,
+            expectedCount: 1,
+            validCount: 1,
+            error: 'canvas is tainted',
+        }))
+    })
+
+    it('clears the save target and refuses export when coordinates are incomplete', () => {
+        vi.spyOn(console, 'error').mockImplementation(() => undefined)
+        const onSnapshotReady = vi.fn()
+        const onSnapshotPending = vi.fn()
+
+        render(
+            <NFTChipOverlay
+                image={image}
+                nftId={3995}
+                expectedCount={2}
+                chips={[{ x: 0, y: 0, w: 30, h: 30 }]}
+                onSnapshotReady={onSnapshotReady}
+                onSnapshotPending={onSnapshotPending}
+            />,
+        )
+
+        expect(onSnapshotPending).toHaveBeenCalledOnce()
+        expect(createFragmentShareImage).not.toHaveBeenCalled()
+        expect(onSnapshotReady).not.toHaveBeenCalled()
     })
 })

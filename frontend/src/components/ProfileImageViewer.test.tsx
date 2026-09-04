@@ -74,6 +74,9 @@ it('uses static thumbnails and opens originals for complete Profile NFTs', async
 
     expect(await screen.findByRole('img', { name: 'NFT #3995 thumbnail' }))
         .toBeInTheDocument()
+    expect(screen.getByTestId('profile-nft-grid')).toHaveClass(
+        'grid-cols-[repeat(auto-fill,minmax(min(200px,100%),200px))]',
+    )
     await user.click(screen.getByRole('button', { name: 'View original NFT #3995' }))
     expect(screen.getByRole('dialog', { name: 'NFT #3995' })).toBeInTheDocument()
 })

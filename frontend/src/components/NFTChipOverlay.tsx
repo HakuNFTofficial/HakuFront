@@ -14,6 +14,7 @@ import {
     type FloatingStarFrame,
     type FloatingStarPlan,
 } from '../nft/chipStarAnimation'
+import { createFragmentShareImage } from '../nft/fragmentShareImage'
 import { startAnimationFrameLoop } from '../services/animationFrameLoop'
 
 interface NFTChipOverlayProps {
@@ -21,6 +22,8 @@ interface NFTChipOverlayProps {
     nftId: number
     expectedCount: number
     chips: ChipCoordinate[]
+    onSnapshotReady?: (blob: Blob) => void
+    onSnapshotPending?: () => void
 }
 
 function drawFloatingStar(
@@ -173,6 +176,8 @@ export function NFTChipOverlay({
     nftId,
     expectedCount,
     chips,
+    onSnapshotReady,
+    onSnapshotPending,
 }: NFTChipOverlayProps) {
     const colorCanvasRef = useRef<HTMLCanvasElement>(null)
     const sparkleCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -181,6 +186,10 @@ export function NFTChipOverlay({
         () => validChips.slice(0, expectedCount),
         [expectedCount, validChips],
     )
+    const hasExactChipCoordinates = Number.isInteger(expectedCount)
+        && expectedCount >= 0
+        && chips.length === expectedCount
+        && validChips.length === expectedCount
     const sparkleChips = useMemo(
         () => selectSparkleChips(renderedChips),
         [renderedChips],
@@ -191,15 +200,16 @@ export function NFTChipOverlay({
     )
 
     useEffect(() => {
-        if (validChips.length === expectedCount) return
+        if (hasExactChipCoordinates) return
 
         console.error({
             event: 'nft_chip_coordinates_invalid',
             nftId,
             expectedCount,
+            receivedCount: chips.length,
             validCount: validChips.length,
         })
-    }, [expectedCount, nftId, validChips.length])
+    }, [chips.length, expectedCount, hasExactChipCoordinates, nftId, validChips.length])
 
     useEffect(() => {
         const canvas = colorCanvasRef.current
@@ -222,6 +232,43 @@ export function NFTChipOverlay({
             )
         }
     }, [image, renderedChips])
+
+    useEffect(() => {
+        if (!onSnapshotReady) return
+        onSnapshotPending?.()
+        if (!hasExactChipCoordinates) return
+
+        let cancelled = false
+        void createFragmentShareImage({
+            image,
+            expectedCount,
+            chips,
+        }).then((blob) => {
+            if (!cancelled) onSnapshotReady(blob)
+        }).catch((error: unknown) => {
+            if (cancelled) return
+            console.error({
+                event: 'nft_fragment_share_image_failed',
+                nftId,
+                expectedCount,
+                validCount: validChips.length,
+                error: error instanceof Error ? error.message : String(error),
+            })
+        })
+
+        return () => {
+            cancelled = true
+        }
+    }, [
+        chips,
+        expectedCount,
+        hasExactChipCoordinates,
+        image,
+        nftId,
+        onSnapshotPending,
+        onSnapshotReady,
+        validChips.length,
+    ])
 
     useEffect(() => {
         const canvas = sparkleCanvasRef.current

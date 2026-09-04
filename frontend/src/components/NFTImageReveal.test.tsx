@@ -3,12 +3,40 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { NFTImageReveal } from './NFTImageReveal'
 
+const { overlayRenderSpy } = vi.hoisted(() => ({
+    overlayRenderSpy: vi.fn(),
+}))
+
 vi.mock('wagmi', () => ({
     useAccount: () => ({ address: '0x1234' }),
 }))
 
 vi.mock('./NFTChipOverlay', () => ({
-    NFTChipOverlay: () => <div data-testid="nft-chip-overlay" />,
+    NFTChipOverlay: ({
+        chips,
+        onSnapshotReady,
+        onSnapshotPending,
+    }: {
+        chips: unknown[]
+        onSnapshotReady?: (blob: Blob) => void
+        onSnapshotPending?: () => void
+    }) => {
+        overlayRenderSpy(chips)
+        return <div>
+            <button
+                type="button"
+                data-testid="nft-chip-overlay"
+                onClick={() => onSnapshotReady?.(
+                    new Blob(['fragment'], { type: 'image/png' }),
+                )}
+            />
+            <button
+                type="button"
+                data-testid="nft-chip-overlay-pending"
+                onClick={() => onSnapshotPending?.()}
+            />
+        </div>
+    },
 }))
 
 const ownedChips = Array.from({ length: 23 }, (_, index) => ({
@@ -37,7 +65,10 @@ function expectSquareMediaRoot(container: HTMLElement) {
 
 describe('NFTImageReveal', () => {
     beforeEach(() => {
+        overlayRenderSpy.mockClear()
         vi.stubEnv('VITE_IPFS_PREVIEW_CID', 'bafy-preview')
+        vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:fragment-png')
+        vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     })
 
     afterEach(() => {
@@ -92,5 +123,45 @@ describe('NFTImageReveal', () => {
             nftId: 3995,
             missingFields: ['VITE_IPFS_PREVIEW_CID'],
         }))
+    })
+
+    it('targets a composed PNG for native Save Image As and releases its blob URL', () => {
+        const { unmount } = render(<NFTImageReveal nft={{ ...nft, is_mint: 0 }} />)
+        const preview = screen.getByRole('img', { name: 'NFT #3995 silhouette' })
+
+        expect(preview).toHaveAttribute('crossorigin', 'anonymous')
+        fireEvent.load(preview)
+        fireEvent.click(screen.getByTestId('nft-chip-overlay'))
+
+        expect(screen.getByTestId('nft-fragment-save-image')).toHaveAttribute(
+            'src',
+            'blob:fragment-png',
+        )
+        fireEvent.click(screen.getByTestId('nft-chip-overlay-pending'))
+        expect(screen.queryByTestId('nft-fragment-save-image')).not.toBeInTheDocument()
+        expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:fragment-png')
+
+        fireEvent.click(screen.getByTestId('nft-chip-overlay'))
+        unmount()
+        expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:fragment-png')
+    })
+
+    it('keeps missing zero-chip coordinates stable across snapshot rerenders', () => {
+        render(<NFTImageReveal nft={{
+            ...nft,
+            is_mint: 0,
+            owned_chips_count: 0,
+            owned_chips: undefined,
+        }} />)
+        fireEvent.load(screen.getByRole('img', { name: 'NFT #3995 silhouette' }))
+
+        const firstCalls = overlayRenderSpy.mock.calls
+        const firstCoordinates = firstCalls[firstCalls.length - 1]?.[0]
+        fireEvent.click(screen.getByTestId('nft-chip-overlay'))
+        const rerenderedCalls = overlayRenderSpy.mock.calls
+        const rerenderedCoordinates = rerenderedCalls[rerenderedCalls.length - 1]?.[0]
+
+        expect(overlayRenderSpy).toHaveBeenCalledTimes(2)
+        expect(rerenderedCoordinates).toBe(firstCoordinates)
     })
 })
