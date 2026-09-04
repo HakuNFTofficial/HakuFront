@@ -14,6 +14,7 @@ import {
     type FloatingStarFrame,
     type FloatingStarPlan,
 } from '../nft/chipStarAnimation'
+import { createFragmentShareImage } from '../nft/fragmentShareImage'
 import { startAnimationFrameLoop } from '../services/animationFrameLoop'
 
 interface NFTChipOverlayProps {
@@ -21,6 +22,7 @@ interface NFTChipOverlayProps {
     nftId: number
     expectedCount: number
     chips: ChipCoordinate[]
+    onSnapshotReady?: (blob: Blob) => void
 }
 
 function drawFloatingStar(
@@ -173,6 +175,7 @@ export function NFTChipOverlay({
     nftId,
     expectedCount,
     chips,
+    onSnapshotReady,
 }: NFTChipOverlayProps) {
     const colorCanvasRef = useRef<HTMLCanvasElement>(null)
     const sparkleCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -222,6 +225,32 @@ export function NFTChipOverlay({
             )
         }
     }, [image, renderedChips])
+
+    useEffect(() => {
+        if (!onSnapshotReady) return
+
+        let cancelled = false
+        void createFragmentShareImage({
+            image,
+            expectedCount,
+            chips,
+        }).then((blob) => {
+            if (!cancelled) onSnapshotReady(blob)
+        }).catch((error: unknown) => {
+            if (cancelled) return
+            console.error({
+                event: 'nft_fragment_share_image_failed',
+                nftId,
+                expectedCount,
+                validCount: validChips.length,
+                error: error instanceof Error ? error.message : String(error),
+            })
+        })
+
+        return () => {
+            cancelled = true
+        }
+    }, [chips, expectedCount, image, nftId, onSnapshotReady, validChips.length])
 
     useEffect(() => {
         const canvas = sparkleCanvasRef.current

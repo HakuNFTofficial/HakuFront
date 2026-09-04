@@ -8,7 +8,19 @@ vi.mock('wagmi', () => ({
 }))
 
 vi.mock('./NFTChipOverlay', () => ({
-    NFTChipOverlay: () => <div data-testid="nft-chip-overlay" />,
+    NFTChipOverlay: ({
+        onSnapshotReady,
+    }: {
+        onSnapshotReady?: (blob: Blob) => void
+    }) => (
+        <button
+            type="button"
+            data-testid="nft-chip-overlay"
+            onClick={() => onSnapshotReady?.(
+                new Blob(['fragment'], { type: 'image/png' }),
+            )}
+        />
+    ),
 }))
 
 const ownedChips = Array.from({ length: 23 }, (_, index) => ({
@@ -38,6 +50,8 @@ function expectSquareMediaRoot(container: HTMLElement) {
 describe('NFTImageReveal', () => {
     beforeEach(() => {
         vi.stubEnv('VITE_IPFS_PREVIEW_CID', 'bafy-preview')
+        vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:fragment-png')
+        vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => undefined)
     })
 
     afterEach(() => {
@@ -92,5 +106,21 @@ describe('NFTImageReveal', () => {
             nftId: 3995,
             missingFields: ['VITE_IPFS_PREVIEW_CID'],
         }))
+    })
+
+    it('targets a composed PNG for native Save Image As and releases its blob URL', () => {
+        const { unmount } = render(<NFTImageReveal nft={{ ...nft, is_mint: 0 }} />)
+        const preview = screen.getByRole('img', { name: 'NFT #3995 silhouette' })
+
+        expect(preview).toHaveAttribute('crossorigin', 'anonymous')
+        fireEvent.load(preview)
+        fireEvent.click(screen.getByTestId('nft-chip-overlay'))
+
+        expect(screen.getByTestId('nft-fragment-save-image')).toHaveAttribute(
+            'src',
+            'blob:fragment-png',
+        )
+        unmount()
+        expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:fragment-png')
     })
 })
