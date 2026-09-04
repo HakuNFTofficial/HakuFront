@@ -237,6 +237,7 @@ export function NFTLifecycleGrid() {
             return
         }
 
+        setApprovedNftIds(prev => reconcileApprovedNftIds(prev, nftUpdate.nfts))
         void fetchNFTSnapshot(false)
     }, Boolean(address))
 
