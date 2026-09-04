@@ -155,9 +155,11 @@ describe('NFTImageReveal', () => {
         }} />)
         fireEvent.load(screen.getByRole('img', { name: 'NFT #3995 silhouette' }))
 
-        const firstCoordinates = overlayRenderSpy.mock.calls.at(-1)?.[0]
+        const firstCalls = overlayRenderSpy.mock.calls
+        const firstCoordinates = firstCalls[firstCalls.length - 1]?.[0]
         fireEvent.click(screen.getByTestId('nft-chip-overlay'))
-        const rerenderedCoordinates = overlayRenderSpy.mock.calls.at(-1)?.[0]
+        const rerenderedCalls = overlayRenderSpy.mock.calls
+        const rerenderedCoordinates = rerenderedCalls[rerenderedCalls.length - 1]?.[0]
 
         expect(overlayRenderSpy).toHaveBeenCalledTimes(2)
         expect(rerenderedCoordinates).toBe(firstCoordinates)
