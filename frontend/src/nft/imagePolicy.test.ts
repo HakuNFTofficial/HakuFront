@@ -1,8 +1,19 @@
 import { describe, expect, it } from 'vitest'
 
-import { resolveNftImageSource } from './imagePolicy'
+import {
+    resolveNftImageSource,
+    resolveNftProfilePreviewSource,
+} from './imagePolicy'
 
 describe('NFT image policy', () => {
+    it.each([0, 1, 2])('uses a WebP thumbnail on Profile for is_mint=%i', (is_mint) => {
+        expect(resolveNftProfilePreviewSource({
+            nft_id: 3995,
+            file_name: '3995.png',
+            is_mint,
+        })).toEqual({ ok: true, kind: 'preview', fileName: '3995.webp' })
+    })
+
     it.each([0, 1])('uses a WebP silhouette for is_mint=%i', (is_mint) => {
         expect(resolveNftImageSource({ nft_id: 3995, file_name: '3995.png', is_mint }))
             .toEqual({ ok: true, kind: 'preview', fileName: '3995.webp' })

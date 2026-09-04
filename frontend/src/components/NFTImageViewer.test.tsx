@@ -47,15 +47,15 @@ describe('NFTImageViewer', () => {
         document.body.style.overflow = previousOverflow
     })
 
-    it('does not render for a pre-mint NFT', () => {
+    it.each([0, 1])('opens the original for Profile lifecycle state is_mint=%i', (is_mint) => {
         render(
             <NFTImageViewer
-                nft={{ ...minted, is_mint: 1 }}
+                nft={{ ...minted, is_mint }}
                 isOpen
                 onClose={vi.fn()}
             />,
         )
 
-        expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+        expect(screen.getByRole('dialog', { name: 'NFT #7081' })).toBeInTheDocument()
     })
 })

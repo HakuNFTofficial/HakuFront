@@ -19,13 +19,24 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
 
     // Load image
     useEffect(() => {
-        if (!isOpen || nft.is_mint !== 2 || !nft.file_name) {
+        if (!isOpen) {
             return
         }
 
         setIsLoading(true)
         setError(null)
         setImageUrl(null)
+        if (!nft.file_name?.trim()) {
+            console.error({
+                event: 'nft_original_source_error',
+                nftId: nft.nft_id,
+                status: nft.is_mint,
+                missingFields: ['file_name'],
+            })
+            setError('Image unavailable')
+            setIsLoading(false)
+            return
+        }
         const imagePath = getIPFSImageUrl(nft.file_name)
         let cancelled = false
         const img = new Image()
@@ -94,7 +105,7 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
 
     // Close on ESC key press
     useEffect(() => {
-        if (!isOpen || nft.is_mint !== 2) return
+        if (!isOpen) return
 
         const handleEscape = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -112,7 +123,7 @@ export function NFTImageViewer({ nft, isOpen, onClose }: NFTImageViewerProps) {
         }
     }, [isOpen, nft.is_mint, onClose])
 
-    if (!isOpen || nft.is_mint !== 2) return null
+    if (!isOpen) return null
 
     return (
         <div 
