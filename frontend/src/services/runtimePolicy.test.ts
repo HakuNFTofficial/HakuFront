@@ -15,7 +15,7 @@ describe('runtime request policy', () => {
     it.each([
         '../components/WalletBalance.tsx',
         '../components/Swap.tsx',
-        '../components/NFTSection.tsx',
+        '../components/NFTLifecycleGrid.tsx',
     ])('%s pauses contract polling while the page is hidden', (path) => {
         const source = readSource(path)
 

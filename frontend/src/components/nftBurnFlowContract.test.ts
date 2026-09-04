@@ -7,7 +7,7 @@ import { describe, expect, test } from 'vitest'
 describe('NFT burn component integration', () => {
     test('confirms before submitting and waits for backend synchronization', () => {
         const source = readFileSync(
-            new URL('./NFTSection.tsx', import.meta.url),
+            new URL('./NFTLifecycleGrid.tsx', import.meta.url),
             'utf8',
         )
 

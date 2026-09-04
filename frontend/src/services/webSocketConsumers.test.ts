@@ -6,7 +6,7 @@ const componentPaths = [
     '../components/Banner.tsx',
     '../components/KLineChart.tsx',
     '../components/NFTSection.tsx',
-    '../components/Profile.tsx',
+    '../components/NFTLifecycleGrid.tsx',
 ]
 
 const readComponent = (componentPath: string) =>
@@ -30,23 +30,42 @@ describe('realtime components', () => {
         expect(source).toContain('NFTChipOverlay')
     })
 
-    it('paginates the homepage instead of rendering every owned NFT', () => {
+    it('requests only one server-paginated incomplete NFT page on Swap', () => {
         const source = readComponent('../components/NFTSection.tsx')
 
-        expect(source).toContain('const nftPage = getNftPage(nfts, currentPage)')
-        expect(source).toContain('nftPage.items.map((nft)')
+        expect(source).toContain('filter=in_progress')
+        expect(source).toContain('page_size=6')
+        expect(source).toContain('include_chips=true')
+        expect(source).toContain('nfts.map((nft)')
         expect(source).toContain('aria-label="NFT card pagination"')
-        expect(source).not.toContain('nfts.map((nft)')
+        expect(source).not.toContain('verify-mint-eligibility')
+        expect(source).not.toContain('writeBurnContract')
     })
 
-    it('loads coordinate-only chip data in both NFT card surfaces', () => {
+    it('keeps coordinates and animation on Swap but not Profile', () => {
         const profileSource = readComponent('../components/Profile.tsx')
+        const lifecycleSource = readComponent('../components/NFTLifecycleGrid.tsx')
         const homeSource = readComponent('../components/NFTSection.tsx')
 
-        expect(profileSource).toContain('include_chips=true')
-        expect(profileSource).not.toContain('include_chips=false')
+        expect(profileSource).toContain('NFTLifecycleGrid')
+        expect(profileSource).not.toContain('NFTImageReveal')
+        expect(lifecycleSource).toContain('include_chips=false')
+        expect(lifecycleSource).toContain('NFTProfileThumbnail')
+        expect(lifecycleSource).not.toContain('NFTImageReveal')
         expect(homeSource).toContain('include_chips=true')
         expect(homeSource).not.toContain('include_chips=false')
+        expect(homeSource).toContain('NFTImageReveal')
         expect(homeSource).toContain('void fetchNFTSnapshot(false)')
+    })
+
+    it('owns mint and burn lifecycle controls only on Profile', () => {
+        const lifecycleSource = readComponent('../components/NFTLifecycleGrid.tsx')
+        const homeSource = readComponent('../components/NFTSection.tsx')
+
+        expect(lifecycleSource).toContain('verify-mint-eligibility')
+        expect(lifecycleSource).toContain("functionName: 'userBurn'")
+        expect(lifecycleSource).toContain("filter === 'minting'")
+        expect(homeSource).not.toContain('verify-mint-eligibility')
+        expect(homeSource).not.toContain("functionName: 'userBurn'")
     })
 })
