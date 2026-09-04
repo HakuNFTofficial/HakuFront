@@ -91,36 +91,36 @@ export function NFTLifecycleGrid() {
     // ✅ Independent approve status for each NFT: track which NFTs have completed approve (for displaying correct button)
     const [approvedNftIds, setApprovedNftIds] = useState<Set<number>>(new Set())
     const timeoutRef = useRef<NodeJS.Timeout | null>(null) // Timeout timer reference
-    
+
     // Wagmi hooks for contract interaction
     const { writeContract, data: hash, error: writeError, isPending: isWritePending } = useWriteContract()
     const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash })
-    
+
     // Approve related states (using separate writeContract hook)
     const { writeContract: writeApproveContract, data: approveHash, isPending: isApprovePending } = useWriteContract()
-    const { isLoading: isApproveConfirming, isSuccess: isApproveConfirmed } = useWaitForTransactionReceipt({ 
-        hash: approveHash 
+    const { isLoading: isApproveConfirming, isSuccess: isApproveConfirmed } = useWaitForTransactionReceipt({
+        hash: approveHash
     })
-    
+
     // Revoke allowance related states
     const [revokingNftId, setRevokingNftId] = useState<number | null>(null) // NFT ID currently revoking authorization
     const { writeContract: writeRevokeContract, data: revokeHash, isPending: isRevokePending } = useWriteContract()
-    const { isLoading: isRevokeConfirming, isSuccess: isRevokeConfirmed } = useWaitForTransactionReceipt({ 
-        hash: revokeHash 
+    const { isLoading: isRevokeConfirming, isSuccess: isRevokeConfirmed } = useWaitForTransactionReceipt({
+        hash: revokeHash
     })
-    
+
     // Burn related states (using separate writeContract hook)
     const { writeContract: writeBurnContract, data: burnHash, isPending: isBurnPending, error: burnError } = useWriteContract()
-    const { isLoading: isBurnConfirming, isSuccess: isBurnConfirmed } = useWaitForTransactionReceipt({ 
-        hash: burnHash 
+    const { isLoading: isBurnConfirming, isSuccess: isBurnConfirmed } = useWaitForTransactionReceipt({
+        hash: burnHash
     })
-    
+
     // Listen for burn errors
     useEffect(() => {
         if (burnError && burningNftId !== null) {
             console.error('[NFTSection] ❌ Burn transaction error:', burnError)
             setBurningNftId(null)
-            
+
             let errorMessage = 'Burn failed: '
             if (burnError.message) {
                 errorMessage += burnError.message
@@ -138,7 +138,7 @@ export function NFTLifecycleGrid() {
             alert(errorMessage)
         }
     }, [burnError, burningNftId])
-    
+
     // Read mintPrice
     const { data: mintPrice } = useReadContract({
         address: CONTRACTS.HUKU_NFT,
@@ -149,21 +149,21 @@ export function NFTLifecycleGrid() {
             refetchIntervalInBackground: false,
         },
     })
-    
+
     // Read HakuToken decimals
     const { data: tokenBDecimals } = useReadContract({
         address: CONTRACTS.TOKEN_B,
         abi: ERC20_ABI,
         functionName: 'decimals',
     })
-    
+
     // Read allowance (amount of HakuToken user has authorized to HukuNFT contract)
     const { data: allowance, refetch: refetchAllowance } = useReadContract({
         address: CONTRACTS.TOKEN_B,
         abi: ERC20_ABI,
         functionName: 'allowance',
-        args: address && CONTRACTS.HUKU_NFT 
-            ? [address, CONTRACTS.HUKU_NFT] 
+        args: address && CONTRACTS.HUKU_NFT
+            ? [address, CONTRACTS.HUKU_NFT]
             : undefined,
         query: {
             enabled: !!address && !!CONTRACTS.HUKU_NFT,
@@ -171,17 +171,17 @@ export function NFTLifecycleGrid() {
             refetchIntervalInBackground: false,
         },
     })
-    
+
     // ✅ No longer need global needsApprove, as we use approvedNftIds to manage independent authorization status for each NFT
     // Each NFT is only added to approvedNftIds after user clicks "Mint" and completes authorization
-    
+
     // After approve confirmed, refresh allowance and mark this NFT as approved
     useEffect(() => {
         if (isApproveConfirmed && approvingNftId !== null) {
             const nftIdToApprove = approvingNftId
             console.log('[NFTSection] 🔔 Approve confirmed for NFT:', nftIdToApprove)
             console.log('[NFTSection] Current approvedNftIds before update:', [...approvedNftIds])
-            
+
             // ✅ First mark this NFT as approved (independent state management), then refresh allowance
             // This avoids clearing just-added state when refetchAllowance triggers other updates
             setApprovedNftIds(prev => {
@@ -202,12 +202,12 @@ export function NFTLifecycleGrid() {
         })
                 return newSet
             })
-    
+
             // Delay refreshing allowance to ensure state update completes
             setTimeout(() => {
             refetchAllowance()
             }, 100)
-            
+
             setApprovingNftId(null)
         }
     }, [isApproveConfirmed, approvingNftId, nfts.length])
@@ -298,7 +298,7 @@ export function NFTLifecycleGrid() {
         if (hash && mintingNftId) {
             console.log('[NFTSection] ✅ Transaction hash received:', hash)
             console.log('[NFTSection] ⏳ Waiting for transaction confirmation...')
-            
+
             // Clear timeout timer (transaction submitted)
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current)
@@ -306,23 +306,23 @@ export function NFTLifecycleGrid() {
             }
         }
     }, [hash, mintingNftId])
-    
+
     // Listen for writeContract calls - set timeout handling
     useEffect(() => {
         // If waiting for wallet response (isWritePending), set timeout
         if (isWritePending && mintingNftId && !hash) {
             console.log('[NFTSection] ⏱️ Setting timeout for wallet response...')
-            
+
             // Clear previous timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current)
             }
-            
+
             // Set new timeout: if no hash within 30 seconds, consider user rejected or wallet not responding
             timeoutRef.current = setTimeout(async () => {
                 if (!hash && mintingNftId) {
                     console.warn('[NFTSection] ⚠️ Wallet timeout - no transaction hash after 30s')
-                    
+
                     // Notify backend to rollback
                     try {
                         await fetch('/api/mint-failed', {
@@ -338,13 +338,13 @@ export function NFTLifecycleGrid() {
                     } catch (notifyErr) {
                         console.error('[NFTSection] ❌ Failed to notify backend:', notifyErr)
                     }
-                    
+
                     alert('Wallet not responding or transaction rejected, backend has been notified to rollback state')
                     setMintingNftId(null)
                 }
             }, 30000) // 30 second timeout
         }
-        
+
         // Cleanup function: clear timeout on component unmount or state change
         return () => {
             if (timeoutRef.current) {
@@ -364,17 +364,17 @@ export function NFTLifecycleGrid() {
     useEffect(() => {
         if (isConfirmed && mintingNftId && address) {
             console.log('[NFTSection] ✅ Mint transaction confirmed, starting polling for backend state update')
-            
+
             // If event association succeeds, display remark info
             if (associatedTransfer?.mintEvent) {
                 console.log('[NFTSection] 📝 Mint event remark:', associatedTransfer.mintEvent.remark)
                 console.log('[NFTSection] 🎫 Token ID:', associatedTransfer.mintEvent.tokenId.toString())
             }
-            
+
             let retryCount = 0
             const maxRetries = 60 // Maximum 60 polls (about 3 minutes)
             let pollingInterval: NodeJS.Timeout | null = null
-            
+
             // Refresh NFT list - continuous polling until backend status updates to is_mint === 2
             const fetchNFTs = async () => {
                 try {
@@ -430,13 +430,13 @@ export function NFTLifecycleGrid() {
                     }
                 }
             }
-            
+
             // Execute immediately once, then poll every 3 seconds
             fetchNFTs()
             pollingInterval = setInterval(() => {
                 fetchNFTs()
             }, 3000)
-            
+
             // Cleanup function: clear polling on component unmount or state change
             return () => {
                 if (pollingInterval) {
@@ -499,10 +499,10 @@ export function NFTLifecycleGrid() {
     useEffect(() => {
         if (writeError && mintingNftId && address) {
             console.error('[NFTSection] ❌ Mint transaction failed:', writeError)
-            
+
             // ✅ Parse error message, provide friendly hint
             let errorMessage = 'Minting failed'
-            
+
             // Check if gas estimation error
             if (writeError.message.includes('estimateGas') || writeError.message.includes('execution reverted')) {
                 // Try to decode error message from error data
@@ -512,10 +512,10 @@ export function NFTLifecycleGrid() {
                     if (typeof errorData === 'string' && errorData.startsWith('0x')) {
                         // Try to decode common errors
                         const errorSelector = errorData.slice(0, 10) // First 4 bytes are error selector
-                        
+
                         console.log('[NFTSection] Error selector:', errorSelector)
                         console.log('[NFTSection] Error data:', errorData)
-                        
+
                         // 0xe450d38c might be insufficient balance or insufficient authorization error
                         if (errorSelector === '0xe450d38c') {
                             try {
@@ -523,14 +523,14 @@ export function NFTLifecycleGrid() {
                                 const address = '0x' + errorData.slice(26, 66)
                                 const uint256_1 = BigInt('0x' + errorData.slice(66, 130))
                                 const uint256_2 = BigInt('0x' + errorData.slice(130, 194))
-                                
+
                                 console.log('[NFTSection] Decoded error data:', {
                                     selector: errorSelector,
                                     address,
                                     uint256_1: uint256_1.toString(),
                                     uint256_2: uint256_2.toString(),
                                 })
-                                
+
                                 // Determine possible error type based on values
                                 // If uint256_2 > uint256_1, might be "insufficient balance" or "insufficient authorization" error
                                 if (uint256_2 > uint256_1) {
@@ -571,7 +571,7 @@ export function NFTLifecycleGrid() {
             } else {
                 errorMessage = `Minting failed: ${writeError.message}`
             }
-            
+
             // Call backend rollback endpoint
             const notifyMintFailed = async () => {
                 try {
@@ -590,7 +590,7 @@ export function NFTLifecycleGrid() {
                 }
             }
             notifyMintFailed()
-            
+
             alert(errorMessage)
             setMintingNftId(null)
         }
@@ -627,11 +627,11 @@ export function NFTLifecycleGrid() {
     const handleCopyContractAddress = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault()
         e.stopPropagation()
-        
+
         try {
             const contractAddress = CONTRACTS.HUKU_NFT
             console.log('[NFTSection] Copying contract address:', contractAddress)
-            
+
             // Use Clipboard API
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 await navigator.clipboard.writeText(contractAddress)
@@ -650,7 +650,7 @@ export function NFTLifecycleGrid() {
                 textArea.remove()
                 console.log('[NFTSection] ✅ Contract address copied (fallback method)')
             }
-            
+
             // Update state to show feedback
             setCopied(true)
             setTimeout(() => {
@@ -800,17 +800,17 @@ export function NFTLifecycleGrid() {
                                                 if (!window.confirm(getBurnConfirmationMessage(nft))) {
                                                     return
                                                 }
-                                                        
+
                                                 try {
                                                     setBurningNftId(nft.nft_id)
                                                     const tokenId = BigInt(nft.token_id)
-                                                    
+
                                                     console.log(`[NFTSection] 🔥 Checking ownership for NFT #${nft.nft_id} (tokenId: ${tokenId})`)
-                                                    
+
                                                     // Note: burn doesn't need approve, only requires user is owner
                                                     // ERC721Burnable's burn function automatically checks permissions
                                                     console.log(`[NFTSection] ✅ Calling userBurn (contract will verify ownership)...`)
-                                                            
+
                                                     writeBurnContract({
                                                         address: CONTRACTS.HUKU_NFT,
                                                         abi: HUKU_NFT_ABI,
@@ -820,7 +820,7 @@ export function NFTLifecycleGrid() {
                                                         } catch (err) {
                                                     console.error('[NFTSection] ❌ Failed to burn NFT:', err)
                                                     setBurningNftId(null)
-                                                    
+
                                                     let errorMessage = 'Burn failed: '
                                                     if (err instanceof Error) {
                                                         errorMessage += err.message
@@ -892,17 +892,17 @@ export function NFTLifecycleGrid() {
                                                     onClick={async () => {
                                                                 // Ensure is_mint === 0 before minting
                                                 if (mintingNftId === nft.nft_id || nft.is_mint !== 0) return
-                                                
+
                                                 // Check allowance again (prevent allowance changed when clicking)
                                                 try {
                                                     const currentAllowance = await refetchAllowance()
                                                     const currentAllowanceValue = currentAllowance.data
-                                                    
+
                                                     if (mintPrice === undefined || mintPrice === null || currentAllowanceValue === undefined || currentAllowanceValue === null) {
                                                         alert('Unable to get authorization info, please refresh page and retry')
                                                         return
                                                     }
-                                                    
+
                                                     const mintPriceBigInt = typeof mintPrice === 'bigint' ? mintPrice : BigInt(String(mintPrice))
                                                     if (currentAllowanceValue < mintPriceBigInt) {
                                                                         alert(`Insufficient authorization! Current allowance: ${currentAllowanceValue.toString()}, Required: ${mintPriceBigInt.toString()}. Please click the "Mint" button first.`)
@@ -913,9 +913,9 @@ export function NFTLifecycleGrid() {
                                                     alert('Error checking authorization, please refresh page and retry')
                                                     return
                                                 }
-                                                
+
                                                 setMintingNftId(nft.nft_id)
-                                                
+
                                                 try {
                                                     // Step 1: Call backend validation endpoint to get contract parameters
                                                     console.log('[NFTSection] 🔍 Verifying mint eligibility...')
@@ -927,38 +927,38 @@ export function NFTLifecycleGrid() {
                                                             nft_id: nft.nft_id.toString(),
                                                         }),
                                                     })
-                                                    
+
                                                     if (!verifyResponse.ok) {
                                                         const errorText = await verifyResponse.text()
                                                         throw new Error(`Verification failed: ${errorText}`)
                                                     }
-                                                    
+
                                                     const verifyData: MintEligibilityResponse = await verifyResponse.json()
                                                     console.log('[NFTSection] ✅ Verification response:', verifyData)
-                                                    
+
                                                     if (!verifyData.eligible) {
                                                         alert(verifyData.message || 'Minting eligibility verification failed')
                                                         setMintingNftId(null)
                                                         return
                                                     }
-                                                    
+
                                                     // ✅ Mark this NFT entered minting process, clear approve status (because is_mint will become 1)
                                                     setApprovedNftIds(prev => {
                                                         const newSet = new Set(prev)
                                                         newSet.delete(nft.nft_id)
                                                         return newSet
                                                     })
-                                                    
+
                                                     // Step 2: Extract contract parameters from validation response
                                                     const tokenIdNum = verifyData.uint256_param || (verifyData.token_id ? parseInt(verifyData.token_id.replace('.png', '')) : 0)
                                                     const remark = verifyData.token_id || nft.nft_id.toString()
-                                                    
+
                                                     console.log('[NFTSection] 📝 Contract params:', {
                                                         to: address,
                                                         remark,
                                                         tokenURL: tokenIdNum,
                                                     })
-                                                    
+
                                                     // Step 3: Call user wallet to execute contract
                                                     console.log('[NFTSection] 🚀 Calling safeMint from user wallet...')
                                                     console.log('[NFTSection] Contract details:', {
@@ -966,7 +966,7 @@ export function NFTLifecycleGrid() {
                                                         functionName: 'safeMint',
                                                         args: [address, remark, tokenIdNum],
                                                     })
-                                                    
+
                                                     // writeContract will trigger wallet popup
                                                     // Note: writeContract may not throw error immediately, need to track status via writeError and hash
                                                     // Timeout handling done by useEffect monitoring isWritePending and hash
@@ -982,11 +982,11 @@ export function NFTLifecycleGrid() {
                                                         console.error('[NFTSection] ❌ writeContract threw error:', contractErr)
                                                         throw contractErr
                                                     }
-                                                    
+
                                                 } catch (err) {
                                                     console.error('[NFTSection] ❌ Mint process failed:', err)
                                                     alert(`Minting failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
-                                                    
+
                                                     // Notify backend to rollback
                                                     try {
                                                         await fetch('/api/mint-failed', {
@@ -1001,7 +1001,7 @@ export function NFTLifecycleGrid() {
                                                     } catch (notifyErr) {
                                                         console.error('[NFTSection] ❌ Failed to notify backend:', notifyErr)
                                                     }
-                                                    
+
                                                     setMintingNftId(null)
                                                 }
                                             }}
@@ -1039,7 +1039,7 @@ export function NFTLifecycleGrid() {
                                                 <span>Mint NFT</span>
                                             )}
                                         </button>
-                                        
+
                                         {/* ✅ Revoke authorization button: only show when this NFT is authorized */}
                                         {approvedNftIds.has(nft.nft_id) && allowance !== undefined && allowance !== null && allowance > 0n && (
                                             <button
@@ -1048,21 +1048,21 @@ export function NFTLifecycleGrid() {
                                                         alert('Please connect wallet first')
                                                         return
                                                     }
-                                                    
+
                                                     // Confirm revoke authorization
                                                     const confirmed = window.confirm(
                                                         `Are you sure you want to revoke authorization?\n\nThis will set allowance to 0. You will need to re-authorize before minting any NFT.`
                                                     )
-                                                    
+
                                                     if (!confirmed) {
                                                         return
                                                     }
-                                                    
+
                                                     setRevokingNftId(nft.nft_id)
-                                                    
+
                                                     try {
                                                         console.log('[NFTSection] Revoking allowance (setting to 0)...')
-                                                        
+
                                                         // Set allowance to 0 to revoke authorization
                                                         writeRevokeContract({
                                                             address: CONTRACTS.TOKEN_B,
@@ -1107,9 +1107,9 @@ export function NFTLifecycleGrid() {
                                                                 alert('Unable to load mint contract data, please refresh page and retry')
                                                                 return
                                                             }
-                                                            
+
                                                             setApprovingNftId(nft.nft_id)
-                                                            
+
                                                             try {
                                                                 // ✅ Precise to single NFT: only approve current NFT's mintPrice (each mint approves separatelyprove）
                                                                 if (mintPrice === undefined || mintPrice === null) {
@@ -1117,18 +1117,18 @@ export function NFTLifecycleGrid() {
                                                                     setApprovingNftId(null)
                                                                     return
                                                                 }
-                                                                
-                                                                const mintPriceBigInt = typeof mintPrice === 'bigint' 
-                                                                    ? mintPrice 
+
+                                                                const mintPriceBigInt = typeof mintPrice === 'bigint'
+                                                                    ? mintPrice
                                                                     : BigInt(String(mintPrice))
-                                                                
+
                                                                 console.log('[NFTSection] Approving HakuToken for specific NFT...', {
                                                                     nft_id: nft.nft_id,
                                                                     mintPrice: mintPriceBigInt.toString(),
                                                                     spender: CONTRACTS.HUKU_NFT,
                                                                     note: 'Only approving amount for this specific NFT',
                                                                 })
-                                                                
+
                                                                 writeApproveContract({
                                                                     address: CONTRACTS.TOKEN_B,
                                                                     abi: ERC20_ABI,
@@ -1153,7 +1153,7 @@ export function NFTLifecycleGrid() {
                                                                     ? 'Authorizing...'
                                                                     : `Mint`}
                                                     </button>
-                                                    
+
                                                     {/* ⚠️ Unauthorized NFTs don't show "Revoke Authorization" button */}
                                                 </>
                                             )}

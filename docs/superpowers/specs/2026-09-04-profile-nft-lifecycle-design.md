@@ -42,4 +42,3 @@ Profile filters are `All`, `Mintable`, `Minting`, and `Burnable`. Counts come fr
 - Run complete frontend tests/build and backend tests/release build.
 - Merge latest `origin/main` into both branches, rerun verification, push both branches, and create pull requests.
 - Deploy backend first with a timestamped binary backup and health rollback, then deploy the frontend through a staged atomic directory swap with a timestamped static backup.
-
