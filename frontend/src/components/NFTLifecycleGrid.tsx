@@ -12,6 +12,10 @@ import {
     getBurnConfirmationMessage,
     waitForBurnSynchronization,
 } from '../nft/burnFlow'
+import {
+    reconcileApprovedNftIds,
+    requireMintContractParameters,
+} from '../nft/profileLifecycle'
 interface NFT {
     nft_id: number
     file_name: string | null
@@ -263,18 +267,9 @@ export function NFTLifecycleGrid() {
 
                 if (data.nfts && data.nfts.length > 0) {
                     setNfts(data.nfts)
-                    setApprovedNftIds(prev => {
-                        const newSet = new Set<number>()
-                        data.nfts.forEach((nft: NFT) => {
-                            if (nft.is_mint === 0 && prev.has(nft.nft_id)) {
-                                newSet.add(nft.nft_id)
-                            }
-                        })
-                        return newSet
-                    })
+                    setApprovedNftIds(prev => reconcileApprovedNftIds(prev, data.nfts))
                 } else {
                     setNfts([])
-                    setApprovedNftIds(new Set())
                 }
             } catch (err) {
                 console.error('[NFTSection] Failed to fetch initial NFTs:', err)
@@ -601,12 +596,12 @@ export function NFTLifecycleGrid() {
         setCurrentPage(1)
         setFilter('profile')
         setSelectedNft(null)
+        setApprovedNftIds(new Set())
+        setMintingNftId(null)
+        setApprovingNftId(null)
+        setBurningNftId(null)
         if (!address) {
             setNfts([])
-            setApprovedNftIds(new Set())
-            setMintingNftId(null)
-            setApprovingNftId(null)
-            setBurningNftId(null)
         }
     }, [address])
 
@@ -950,21 +945,23 @@ export function NFTLifecycleGrid() {
                                                     })
 
                                                     // Step 2: Extract contract parameters from validation response
-                                                    const tokenIdNum = verifyData.uint256_param || (verifyData.token_id ? parseInt(verifyData.token_id.replace('.png', '')) : 0)
-                                                    const remark = verifyData.token_id || nft.nft_id.toString()
+                                                    const contractParameters = requireMintContractParameters(
+                                                        verifyData,
+                                                        CONTRACTS.HUKU_NFT,
+                                                    )
 
                                                     console.log('[NFTSection] 📝 Contract params:', {
                                                         to: address,
-                                                        remark,
-                                                        tokenURL: tokenIdNum,
+                                                        remark: contractParameters.remark,
+                                                        tokenURL: contractParameters.uint256Param.toString(),
                                                     })
 
                                                     // Step 3: Call user wallet to execute contract
                                                     console.log('[NFTSection] 🚀 Calling safeMint from user wallet...')
                                                     console.log('[NFTSection] Contract details:', {
-                                                        address: CONTRACTS.HUKU_NFT,
+                                                        address: contractParameters.contractAddress,
                                                         functionName: 'safeMint',
-                                                        args: [address, remark, tokenIdNum],
+                                                        args: [address, contractParameters.remark, contractParameters.uint256Param.toString()],
                                                     })
 
                                                     // writeContract will trigger wallet popup
@@ -972,10 +969,10 @@ export function NFTLifecycleGrid() {
                                                     // Timeout handling done by useEffect monitoring isWritePending and hash
                                                     try {
                                                         writeContract({
-                                                            address: CONTRACTS.HUKU_NFT as `0x${string}`,
+                                                            address: contractParameters.contractAddress,
                                                             abi: HUKU_NFT_ABI,
                                                             functionName: 'safeMint',
-                                                            args: [address as `0x${string}`, remark, BigInt(tokenIdNum)],
+                                                            args: [address as `0x${string}`, contractParameters.remark, contractParameters.uint256Param],
                                                         })
                                                         console.log('[NFTSection] ✅ writeContract called successfully, waiting for wallet popup...')
                                                     } catch (contractErr) {
