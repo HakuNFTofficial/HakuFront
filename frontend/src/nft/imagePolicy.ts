@@ -22,6 +22,20 @@ function previewFileName(fileName: string): string {
     return `${stem}.webp`
 }
 
+export function resolveNftProfilePreviewSource(nft: NFTImageState): NFTImageSource {
+    if (!nft.file_name?.trim()) {
+        return {
+            ok: false,
+            code: 'NFT_IMAGE_SOURCE_MISSING',
+            nftId: nft.nft_id,
+            status: nft.is_mint ?? 0,
+            missingFields: ['file_name'],
+        }
+    }
+
+    return { ok: true, kind: 'preview', fileName: previewFileName(nft.file_name) }
+}
+
 export function resolveNftImageSource(nft: NFTImageState): NFTImageSource {
     if (!nft.file_name?.trim()) {
         return {
