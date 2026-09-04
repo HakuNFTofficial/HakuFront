@@ -736,7 +736,7 @@ export function NFTLifecycleGrid() {
                 <>
                     <div
                         data-testid="profile-nft-grid"
-                        className="grid grid-cols-[repeat(auto-fill,200px)] justify-start gap-4"
+                        className="grid grid-cols-[repeat(auto-fill,minmax(min(200px,100%),200px))] justify-start gap-4"
                     >
                     {nfts.map((nft) => {
                         const isApproved = approvedNftIds.has(nft.nft_id)

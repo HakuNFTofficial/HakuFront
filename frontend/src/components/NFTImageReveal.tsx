@@ -56,6 +56,11 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
         setFragmentSaveUrl(nextUrl)
     }, [releaseFragmentSaveUrl])
 
+    const handleSnapshotPending = useCallback(() => {
+        releaseFragmentSaveUrl()
+        setFragmentSaveUrl(null)
+    }, [releaseFragmentSaveUrl])
+
     useEffect(() => () => {
         releaseFragmentSaveUrl()
     }, [releaseFragmentSaveUrl])
@@ -131,6 +136,7 @@ export function NFTImageReveal({ nft, onViewOriginal }: NFTImageRevealProps) {
                     expectedCount={nft.owned_chips_count}
                     chips={nft.owned_chips ?? []}
                     onSnapshotReady={handleSnapshotReady}
+                    onSnapshotPending={handleSnapshotPending}
                 />
             )}
             {fragmentSaveUrl && (

@@ -10,16 +10,25 @@ vi.mock('wagmi', () => ({
 vi.mock('./NFTChipOverlay', () => ({
     NFTChipOverlay: ({
         onSnapshotReady,
+        onSnapshotPending,
     }: {
         onSnapshotReady?: (blob: Blob) => void
+        onSnapshotPending?: () => void
     }) => (
-        <button
-            type="button"
-            data-testid="nft-chip-overlay"
-            onClick={() => onSnapshotReady?.(
-                new Blob(['fragment'], { type: 'image/png' }),
-            )}
-        />
+        <div>
+            <button
+                type="button"
+                data-testid="nft-chip-overlay"
+                onClick={() => onSnapshotReady?.(
+                    new Blob(['fragment'], { type: 'image/png' }),
+                )}
+            />
+            <button
+                type="button"
+                data-testid="nft-chip-overlay-pending"
+                onClick={() => onSnapshotPending?.()}
+            />
+        </div>
     ),
 }))
 
@@ -120,6 +129,11 @@ describe('NFTImageReveal', () => {
             'src',
             'blob:fragment-png',
         )
+        fireEvent.click(screen.getByTestId('nft-chip-overlay-pending'))
+        expect(screen.queryByTestId('nft-fragment-save-image')).not.toBeInTheDocument()
+        expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:fragment-png')
+
+        fireEvent.click(screen.getByTestId('nft-chip-overlay'))
         unmount()
         expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:fragment-png')
     })
