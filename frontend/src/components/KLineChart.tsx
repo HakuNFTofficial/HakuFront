@@ -2,6 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { createChart, IChartApi, CandlestickData, UTCTimestamp, CandlestickSeries, HistogramSeries } from 'lightweight-charts'
 import { useWebSocketEvent, useWebSocketReconnect, useWebSocketStatus } from '../providers/WebSocketProvider'
 import { TRADING_PAIR_CONFIG } from '../config/contracts'
+import {
+    KLINE_PRICE_MIN_MOVE,
+    KLINE_PRICE_PRECISION,
+    formatKlinePrice,
+    getInitialVisibleLogicalRange,
+} from './klinePresentation'
 
 interface KlineUpdateEvent {
     pair_id: number
@@ -29,6 +35,7 @@ export function KLineChart() {
     const chartRef = useRef<IChartApi | null>(null)
     const candlestickSeriesRef = useRef<any>(null)
     const volumeSeriesRef = useRef<any>(null)
+    const priceChangeBaseRef = useRef<number | null>(null)
 
     const [interval, setInterval] = useState<TimeInterval>('1m')
     const [isLoading, setIsLoading] = useState(true)
@@ -79,10 +86,19 @@ export function KLineChart() {
                 volumeSeriesRef.current.setData(volumeData)
 
                 const lastCandle = data[data.length - 1]
-                const firstCandle = data[0]
-                setCurrentPrice(lastCandle.close)
+                const visibleRange = getInitialVisibleLogicalRange(data.length)
+                const firstVisibleIndex = visibleRange?.from ?? 0
+                const firstCandle = data[firstVisibleIndex]
+                const firstPrice = parseFloat(firstCandle.open)
 
-                const change = ((parseFloat(lastCandle.close) - parseFloat(firstCandle.open)) / parseFloat(firstCandle.open)) * 100
+                if (visibleRange) {
+                    chartRef.current.timeScale().setVisibleLogicalRange(visibleRange)
+                }
+
+                setCurrentPrice(lastCandle.close)
+                priceChangeBaseRef.current = firstPrice
+
+                const change = ((parseFloat(lastCandle.close) - firstPrice) / firstPrice) * 100
                 setPriceChange(change)
             }
 
@@ -139,6 +155,12 @@ export function KLineChart() {
 
                     // Update current price
                     setCurrentPrice(event.close)
+
+                    const basePrice = priceChangeBaseRef.current
+                    if (basePrice && basePrice > 0) {
+                        const change = ((parseFloat(event.close) - basePrice) / basePrice) * 100
+                        setPriceChange(change)
+                    }
                 } catch (err) {
                     console.error('Error updating chart series:', err)
                 }
@@ -171,7 +193,11 @@ export function KLineChart() {
                 mode: 1
             },
             rightPriceScale: {
-                borderColor: '#2a2b36'
+                visible: true,
+                borderVisible: true,
+                borderColor: '#2a2b36',
+                ticksVisible: true,
+                minimumWidth: 82,
             },
             timeScale: {
                 borderColor: '#2a2b36',
@@ -188,7 +214,12 @@ export function KLineChart() {
             borderUpColor: '#4ade80',
             borderDownColor: '#ef4444',
             wickUpColor: '#4ade80',
-            wickDownColor: '#ef4444'
+            wickDownColor: '#ef4444',
+            priceFormat: {
+                type: 'price',
+                precision: KLINE_PRICE_PRECISION,
+                minMove: KLINE_PRICE_MIN_MOVE,
+            },
         })
 
         // Configure candlestick series to take up most of the space
@@ -202,6 +233,8 @@ export function KLineChart() {
         // Create volume series
         const volumeSeries = chart.addSeries(HistogramSeries, {
             color: '#4ade8080',
+            priceLineVisible: false,
+            lastValueVisible: false,
             priceFormat: {
                 type: 'volume'
             },
@@ -271,7 +304,7 @@ export function KLineChart() {
                         </div>
                     </div>
                     <div className="flex items-baseline gap-1.5">
-                        <span className="text-sm font-bold text-white">${parseFloat(currentPrice).toFixed(4)}</span>
+                        <span className="text-sm font-bold text-white">${formatKlinePrice(currentPrice)}</span>
                         <span className={`text-[10px] font-medium ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
                         </span>
