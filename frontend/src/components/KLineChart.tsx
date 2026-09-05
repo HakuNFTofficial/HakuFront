@@ -181,6 +181,7 @@ export function KLineChart() {
                 background: { color: '#1a1b23' },
                 textColor: '#d1d5db',
                 fontSize: 10,
+                attributionLogo: false,
             },
             grid: {
                 vertLines: { color: '#2a2b36' },
@@ -215,6 +216,8 @@ export function KLineChart() {
             borderDownColor: '#ef4444',
             wickUpColor: '#4ade80',
             wickDownColor: '#ef4444',
+            priceLineVisible: false,
+            lastValueVisible: false,
             priceFormat: {
                 type: 'price',
                 precision: KLINE_PRICE_PRECISION,

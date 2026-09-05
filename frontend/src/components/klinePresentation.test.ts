@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import {
@@ -18,5 +21,25 @@ describe('K-line presentation', () => {
         expect(getInitialVisibleLogicalRange(100)).toEqual({ from: 60, to: 99 })
         expect(getInitialVisibleLogicalRange(12)).toEqual({ from: 0, to: 11 })
         expect(getInitialVisibleLogicalRange(0)).toBeNull()
+    })
+
+    it('keeps the chart free of provider branding and current-price marker lines', () => {
+        const source = readFileSync(
+            resolve(process.cwd(), 'src/components/KLineChart.tsx'),
+            'utf8',
+        )
+        const appSource = readFileSync(
+            resolve(process.cwd(), 'src/App.tsx'),
+            'utf8',
+        )
+        const candlestickOptions = source.slice(
+            source.indexOf('const candlestickSeries ='),
+            source.indexOf('const volumeSeries ='),
+        )
+
+        expect(source).toContain('attributionLogo: false')
+        expect(candlestickOptions).toContain('priceLineVisible: false')
+        expect(candlestickOptions).toContain('lastValueVisible: false')
+        expect(appSource).toContain('https://www.tradingview.com/')
     })
 })

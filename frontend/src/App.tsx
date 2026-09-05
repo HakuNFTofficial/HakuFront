@@ -642,6 +642,15 @@ function App() {
                 )}
             </div>
 
+            <a
+                href="https://www.tradingview.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block py-1 text-center text-[8px] text-gray-700 hover:text-gray-500"
+            >
+                Charts by TradingView
+            </a>
+
             {/* Version Checker */}
             <VersionChecker checkInterval={5 * 60 * 1000} autoShow={true} />
 
