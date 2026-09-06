@@ -1,6 +1,6 @@
 /// <reference types="vitest/config" />
 
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
@@ -10,6 +10,28 @@ const packageJson = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 
 const version = packageJson.version || '0.0.0'
 const buildTime = new Date().toISOString()
 
+function requireProductionEnvironment(): Plugin {
+    return {
+        name: 'require-production-environment',
+        config(_config, { command, mode }) {
+            if (command !== 'build' || mode !== 'production') return
+
+            const env = loadEnv(mode, __dirname, '')
+            const requiredFields = ['VITE_IPFS_PREVIEW_CID'] as const
+            const missingFields = requiredFields.filter((field) => !env[field]?.trim())
+
+            if (missingFields.length > 0) {
+                throw new Error(JSON.stringify({
+                    code: 'FRONTEND_BUILD_ENV_MISSING',
+                    missingFields,
+                    command,
+                    mode,
+                }))
+            }
+        }
+    }
+}
+
 export default defineConfig({
     test: {
         environment: 'jsdom',
@@ -18,6 +40,7 @@ export default defineConfig({
         css: true,
     },
     plugins: [
+        requireProductionEnvironment(),
         react(),
         // 自定义插件：注入版本信息到HTML
         {
