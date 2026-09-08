@@ -1,55 +1,55 @@
 #!/bin/bash
 
 echo "=========================================="
-echo "🚀 部署前端到本地服务器"
+echo "🚀 Deploy frontend to a local server"
 echo "=========================================="
 echo ""
 
-# 检查 dist 目录是否存在
+# Ensure the build output exists
 if [ ! -d "dist" ]; then
-    echo "❌ dist 目录不存在，请先运行 npm run build"
+    echo "❌ The dist directory is missing. Run npm run build first."
     exit 1
 fi
 
-echo "✅ 找到 dist 目录"
+echo "✅ Found the dist directory"
 echo ""
 
-# 选项1: 使用 serve 启动简单的 HTTP 服务器
-echo "📦 选项1: 使用 serve 启动（推荐用于测试）"
+# Option 1: start a simple HTTP server with serve
+echo "📦 Option 1: Start with serve (recommended for testing)"
 echo "---"
 
-# 检查是否安装了 serve
+# Check whether serve is installed
 if command -v serve &> /dev/null; then
-    echo "✅ serve 已安装"
+    echo "✅ serve is installed"
     echo ""
-    echo "启动服务器在 http://localhost:3000"
-    echo "按 Ctrl+C 停止服务器"
+    echo "Starting the server at http://localhost:3000"
+    echo "Press Ctrl+C to stop the server"
     echo ""
     cd dist && serve -s . -p 3000
 else
-    echo "⚠️  serve 未安装"
+    echo "⚠️  serve is not installed"
     echo ""
-    echo "安装方法："
+    echo "Install it with:"
     echo "  npm install -g serve"
     echo ""
-    echo "或者使用 Python 启动服务器:"
+    echo "Alternatively, start a server with Python:"
     echo "  cd dist && python3 -m http.server 3000"
     echo ""
     
-    # 选项2: 使用 Python 启动
-    echo "📦 选项2: 使用 Python HTTP 服务器"
+    # Option 2: start a Python HTTP server
+    echo "📦 Option 2: Start a Python HTTP server"
     echo "---"
     if command -v python3 &> /dev/null; then
-        echo "✅ Python3 已安装"
+        echo "✅ Python 3 is installed"
         echo ""
-        echo "启动服务器在 http://localhost:3000"
-        echo "按 Ctrl+C 停止服务器"
+        echo "Starting the server at http://localhost:3000"
+        echo "Press Ctrl+C to stop the server"
         echo ""
         cd dist && python3 -m http.server 3000
     else
-        echo "❌ Python3 未安装"
+        echo "❌ Python 3 is not installed"
         echo ""
-        echo "请手动将 dist/ 目录部署到你的 web 服务器"
+        echo "Deploy the dist directory to your web server manually"
     fi
 fi
 

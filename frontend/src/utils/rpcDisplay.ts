@@ -1,5 +1,5 @@
-export const RPC_UNAVAILABLE_MESSAGE = '链上数据暂时无法读取，请稍后重试'
-export const BALANCE_UNAVAILABLE_LABEL = '暂时无法读取'
+export const RPC_UNAVAILABLE_MESSAGE = 'On-chain data is temporarily unavailable. Please try again later.'
+export const BALANCE_UNAVAILABLE_LABEL = 'Temporarily unavailable'
 
 export type BalanceDisplayState =
     | { kind: 'loading' }
