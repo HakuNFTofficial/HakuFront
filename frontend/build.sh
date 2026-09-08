@@ -1,45 +1,44 @@
 #!/bin/bash
 
-# 前端项目打包脚本
-# 使用方法: ./build.sh
+# Frontend build script
+# Usage: ./build.sh
 
 set -e
 
-echo "🚀 开始构建前端项目..."
+echo "🚀 Starting frontend build..."
 
-# 检查是否在frontend目录
+# Ensure the script runs from the frontend directory
 if [ ! -f "package.json" ]; then
-    echo "❌ 错误: 请在frontend目录下运行此脚本"
+    echo "❌ Error: run this script from the frontend directory"
     exit 1
 fi
 
-# 检查node_modules是否存在
+# Install dependencies when needed
 if [ ! -d "node_modules" ]; then
-    echo "📦 安装依赖..."
+    echo "📦 Installing dependencies..."
     npm install
 fi
 
-# 清理旧的构建文件
+# Remove previous build output
 if [ -d "dist" ]; then
-    echo "🧹 清理旧的构建文件..."
+    echo "🧹 Removing previous build output..."
     rm -rf dist
 fi
 
-# 构建项目
-echo "🔨 构建生产版本..."
+# Build the production bundle
+echo "🔨 Building the production bundle..."
 npm run build
 
-# 检查构建结果
+# Validate the build output
 if [ -d "dist" ] && [ -f "dist/index.html" ]; then
-    echo "✅ 构建成功！"
-    echo "📁 构建文件位于: $(pwd)/dist"
+    echo "✅ Build completed successfully."
+    echo "📁 Build output: $(pwd)/dist"
     echo ""
-    echo "📋 下一步:"
-    echo "1. 将 dist 目录下的所有文件上传到服务器"
-    echo "2. 配置nginx（参考 DEPLOYMENT_GUIDE.md）"
-    echo "3. 确保后端服务在8686端口运行"
+    echo "📋 Next steps:"
+    echo "1. Upload every file in dist to the server"
+    echo "2. Configure nginx (see DEPLOYMENT_GUIDE.md)"
+    echo "3. Ensure the backend service is listening on port 8686"
 else
-    echo "❌ 构建失败: dist目录或index.html不存在"
+    echo "❌ Build failed: the dist directory or index.html is missing"
     exit 1
 fi
-

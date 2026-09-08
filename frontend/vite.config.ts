@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-// 读取package.json获取版本号
+// Read the application version from package.json
 const packageJson = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
 const version = packageJson.version || '0.0.0'
 const buildTime = new Date().toISOString()
@@ -42,7 +42,7 @@ export default defineConfig({
     plugins: [
         requireProductionEnvironment(),
         react(),
-        // 自定义插件：注入版本信息到HTML
+        // Inject version metadata into the HTML document
         {
             name: 'inject-version',
             transformIndexHtml(html) {
@@ -56,7 +56,7 @@ export default defineConfig({
         }
     ],
     define: {
-        // 在代码中可以使用 import.meta.env.APP_VERSION
+        // Expose the application version to client code
         'import.meta.env.APP_VERSION': JSON.stringify(version),
         'import.meta.env.BUILD_TIME': JSON.stringify(buildTime),
     },

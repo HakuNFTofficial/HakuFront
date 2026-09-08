@@ -1,74 +1,74 @@
 #!/bin/bash
-# Nginx配置诊断和修复脚本
-# 用于解决显示nginx默认页面而不是前端应用的问题
+# Nginx configuration diagnostic and repair script
+# Resolves cases where nginx serves its default page instead of the frontend
 
 set -e
 
 echo "=========================================="
-echo "🔍 Nginx配置诊断工具"
+echo "🔍 Nginx Configuration Diagnostic"
 echo "=========================================="
 echo ""
 
-# 1. 检查nginx是否运行
-echo "1️⃣ 检查nginx状态..."
+# 1. Check whether nginx is running
+echo "1️⃣ Checking nginx status..."
 if systemctl is-active --quiet nginx; then
-    echo "   ✅ nginx正在运行"
+    echo "   ✅ nginx is running"
 else
-    echo "   ❌ nginx未运行，正在启动..."
+    echo "   ❌ nginx is not running; starting it..."
     sudo systemctl start nginx
 fi
 
-# 2. 检查所有启用的站点配置
+# 2. Inspect enabled site configurations
 echo ""
-echo "2️⃣ 检查启用的站点配置..."
-echo "   sites-enabled目录:"
+echo "2️⃣ Inspecting enabled site configurations..."
+echo "   sites-enabled directory:"
 if [ -d /etc/nginx/sites-enabled ]; then
     ls -la /etc/nginx/sites-enabled/ | grep -v "^total" | grep -v "^d"
     
-    # 检查默认站点
+    # Check for a default site
     if ls /etc/nginx/sites-enabled/ | grep -q "default"; then
         echo ""
-        echo "   ⚠️  发现默认站点配置！"
-        echo "   找到的文件:"
+        echo "   ⚠️  Found a default site configuration!"
+        echo "   Matching files:"
         ls /etc/nginx/sites-enabled/ | grep "default"
         echo ""
-        read -p "   是否删除默认站点配置? (y/n) " -n 1 -r
+        read -p "   Remove the default site configuration? (y/n) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             sudo rm -f /etc/nginx/sites-enabled/default
             sudo rm -f /etc/nginx/sites-enabled/000-default
             sudo rm -f /etc/nginx/sites-enabled/000-default.conf
-            echo "   ✅ 已删除默认站点配置"
+            echo "   ✅ Removed the default site configuration"
         fi
     else
-        echo "   ✅ 未发现默认站点配置"
+        echo "   ✅ No default site configuration found"
     fi
 else
-    echo "   ⚠️  sites-enabled目录不存在（可能使用conf.d）"
+    echo "   ⚠️  sites-enabled does not exist; this system may use conf.d"
 fi
 
-# 3. 检查conf.d目录
+# 3. Inspect the conf.d directory
 echo ""
-echo "3️⃣ 检查conf.d目录..."
+echo "3️⃣ Inspecting the conf.d directory..."
 if [ -d /etc/nginx/conf.d ]; then
-    echo "   conf.d目录内容:"
+    echo "   conf.d contents:"
     ls -la /etc/nginx/conf.d/ | grep -v "^total" | grep -v "^d"
     
     if [ -f /etc/nginx/conf.d/default.conf ]; then
         echo ""
-        echo "   ⚠️  发现默认配置: default.conf"
-        read -p "   是否备份并删除? (y/n) " -n 1 -r
+        echo "   ⚠️  Found default configuration: default.conf"
+        read -p "   Back up and remove it? (y/n) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             sudo mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.conf.bak
-            echo "   ✅ 已备份为 default.conf.bak"
+            echo "   ✅ Backed up as default.conf.bak"
         fi
     fi
 fi
 
-# 4. 检查你的配置
+# 4. Inspect the frontend configuration
 echo ""
-echo "4️⃣ 检查你的前端配置..."
+echo "4️⃣ Inspecting the frontend configuration..."
 CONFIG_AVAILABLE="/etc/nginx/sites-available/uniswap-v4-frontend.conf"
 CONFIG_ENABLED="/etc/nginx/sites-enabled/uniswap-v4-frontend.conf"
 CONFIG_CONFD="/etc/nginx/conf.d/uniswap-v4-frontend.conf"
@@ -76,141 +76,140 @@ CONFIG_CONFD="/etc/nginx/conf.d/uniswap-v4-frontend.conf"
 FOUND_CONFIG=""
 
 if [ -f "$CONFIG_AVAILABLE" ]; then
-    echo "   ✅ 找到配置: $CONFIG_AVAILABLE"
+    echo "   ✅ Found configuration: $CONFIG_AVAILABLE"
     FOUND_CONFIG="$CONFIG_AVAILABLE"
     
-    # 检查是否启用
+    # Check whether it is enabled
     if [ -L "$CONFIG_ENABLED" ] || [ -f "$CONFIG_ENABLED" ]; then
-        echo "   ✅ 配置已启用"
+        echo "   ✅ Configuration is enabled"
     else
-        echo "   ⚠️  配置未启用，正在创建符号链接..."
+        echo "   ⚠️  Configuration is not enabled; creating a symbolic link..."
         sudo ln -sf "$CONFIG_AVAILABLE" "$CONFIG_ENABLED"
-        echo "   ✅ 已启用"
+        echo "   ✅ Configuration enabled"
     fi
 elif [ -f "$CONFIG_CONFD" ]; then
-    echo "   ✅ 找到配置: $CONFIG_CONFD"
+    echo "   ✅ Found configuration: $CONFIG_CONFD"
     FOUND_CONFIG="$CONFIG_CONFD"
 else
-    echo "   ❌ 未找到配置文件！"
+    echo "   ❌ Configuration file not found!"
     echo ""
-    echo "   请创建配置文件:"
+    echo "   Create a configuration file:"
     echo "   sudo nano $CONFIG_AVAILABLE"
-    echo "   或"
+    echo "   or"
     echo "   sudo nano $CONFIG_CONFD"
     echo ""
-    echo "   然后复制 nginx.conf.example 的内容"
+    echo "   Then copy the contents of nginx.conf.example"
     exit 1
 fi
 
-# 5. 检查配置内容
+# 5. Inspect configuration content
 echo ""
-echo "5️⃣ 检查配置内容..."
+echo "5️⃣ Inspecting configuration content..."
 if [ -n "$FOUND_CONFIG" ]; then
-    # 检查default_server
+    # Check for default_server
     if grep -q "listen 80 default_server" "$FOUND_CONFIG"; then
-        echo "   ✅ 配置包含 default_server"
+        echo "   ✅ Configuration includes default_server"
     else
-        echo "   ❌ 配置缺少 default_server！"
-        echo "   请确保配置文件中包含: listen 80 default_server;"
+        echo "   ❌ Configuration is missing default_server!"
+        echo "   Ensure the configuration includes: listen 80 default_server;"
         echo ""
-        read -p "   是否自动修复? (y/n) " -n 1 -r
+        read -p "   Apply the fix automatically? (y/n) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             sudo sed -i 's/listen 80;/listen 80 default_server;/g' "$FOUND_CONFIG"
-            echo "   ✅ 已修复"
+            echo "   ✅ Configuration fixed"
         fi
     fi
     
-    # 检查root路径
+    # Inspect the root path
     ROOT_PATH=$(grep "^\s*root" "$FOUND_CONFIG" | head -1 | awk '{print $2}' | tr -d ';')
     if [ -n "$ROOT_PATH" ]; then
-        echo "   📁 root路径: $ROOT_PATH"
+        echo "   📁 Root path: $ROOT_PATH"
         if [ -d "$ROOT_PATH" ]; then
-            echo "   ✅ 路径存在"
+            echo "   ✅ Path exists"
             if [ -f "$ROOT_PATH/index.html" ]; then
-                echo "   ✅ index.html存在"
+                echo "   ✅ index.html exists"
             else
-                echo "   ❌ index.html不存在！"
-                echo "   请检查文件路径或上传前端文件"
+                echo "   ❌ index.html is missing!"
+                echo "   Check the file path or upload the frontend files"
             fi
         else
-            echo "   ❌ 路径不存在！"
-            echo "   请检查配置中的root路径是否正确"
+            echo "   ❌ Path does not exist!"
+            echo "   Check the root path in the configuration"
         fi
     else
-        echo "   ⚠️  未找到root配置"
+        echo "   ⚠️  Root directive not found"
     fi
 fi
 
-# 6. 检查nginx实际加载的配置
+# 6. Inspect the configuration nginx actually loaded
 echo ""
-echo "6️⃣ 检查nginx实际加载的配置..."
-echo "   监听80端口的配置:"
+echo "6️⃣ Inspecting the configuration loaded by nginx..."
+echo "   Configuration listening on port 80:"
 sudo nginx -T 2>/dev/null | grep -A 5 "listen 80" | head -20
 
 echo ""
-echo "   default_server配置:"
+echo "   default_server configuration:"
 DEFAULT_SERVERS=$(sudo nginx -T 2>/dev/null | grep "default_server" | wc -l)
 if [ "$DEFAULT_SERVERS" -gt 0 ]; then
     sudo nginx -T 2>/dev/null | grep -B 2 -A 5 "default_server" | head -20
-    echo "   ✅ 找到 $DEFAULT_SERVERS 个 default_server 配置"
+    echo "   ✅ Found $DEFAULT_SERVERS default_server configuration(s)"
 else
-    echo "   ❌ 未找到 default_server 配置！"
-    echo "   这是问题的根源！"
+    echo "   ❌ No default_server configuration found!"
+    echo "   This is the root cause of the issue."
 fi
 
-# 7. 测试配置
+# 7. Test the configuration
 echo ""
-echo "7️⃣ 测试nginx配置..."
+echo "7️⃣ Testing the nginx configuration..."
 if sudo nginx -t 2>&1 | grep -q "test is successful"; then
-    echo "   ✅ 配置测试通过"
+    echo "   ✅ Configuration test passed"
     TEST_PASSED=true
 else
-    echo "   ❌ 配置测试失败！"
-    echo "   错误信息:"
+    echo "   ❌ Configuration test failed!"
+    echo "   Error details:"
     sudo nginx -t
     TEST_PASSED=false
 fi
 
-# 8. 如果测试通过，重新加载
+# 8. Reload nginx when the test passes
 if [ "$TEST_PASSED" = true ]; then
     echo ""
-    echo "8️⃣ 重新加载nginx..."
+    echo "8️⃣ Reloading nginx..."
     if sudo systemctl reload nginx; then
-        echo "   ✅ nginx已重新加载"
+        echo "   ✅ nginx reloaded"
     else
-        echo "   ⚠️  reload失败，尝试重启..."
+        echo "   ⚠️  Reload failed; attempting a restart..."
         sudo systemctl restart nginx
-        echo "   ✅ nginx已重启"
+        echo "   ✅ nginx restarted"
     fi
     
-    # 9. 验证
+    # 9. Verify access
     echo ""
-    echo "9️⃣ 验证访问..."
+    echo "9️⃣ Verifying access..."
     sleep 1
     RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/ 2>/dev/null || echo "000")
     if [ "$RESPONSE" = "200" ]; then
-        echo "   ✅ 本地访问正常 (HTTP $RESPONSE)"
+        echo "   ✅ Local access succeeded (HTTP $RESPONSE)"
     else
-        echo "   ⚠️  本地访问返回: HTTP $RESPONSE"
+        echo "   ⚠️  Local access returned HTTP $RESPONSE"
     fi
 fi
 
-# 10. 总结
+# 10. Summary
 echo ""
 echo "=========================================="
-echo "📋 诊断总结"
+echo "📋 Diagnostic Summary"
 echo "=========================================="
 echo ""
-echo "如果问题仍然存在，请检查:"
-echo "1. 配置文件路径: $FOUND_CONFIG"
-echo "2. root路径是否正确: $ROOT_PATH"
-echo "3. 前端文件是否存在: $ROOT_PATH/index.html"
-echo "4. 文件权限是否正确"
+echo "If the issue persists, check:"
+echo "1. Configuration file path: $FOUND_CONFIG"
+echo "2. Root path: $ROOT_PATH"
+echo "3. Frontend file: $ROOT_PATH/index.html"
+echo "4. File permissions"
 echo ""
-echo "🔍 调试命令:"
+echo "🔍 Debugging commands:"
 echo "   sudo nginx -T | grep -A 10 'listen 80'"
 echo "   curl -I http://localhost/"
 echo "   sudo tail -f /var/log/nginx/error.log"
 echo ""
-

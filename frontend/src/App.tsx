@@ -294,7 +294,7 @@ function App() {
                                                 />
                                             )}
                                             <span className="text-sm font-mono hidden sm:inline">{address?.slice(0, 4)}...{address?.slice(-4)}</span>
-                                            {/* Hamburger Icon (三道杠) */}
+                                            {/* Hamburger Icon (three horizontal lines) */}
                                             <svg 
                                                 className="w-5 h-5"
                                                 fill="none" 
