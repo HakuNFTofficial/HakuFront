@@ -6,7 +6,7 @@ const readSource = (path: string) => readFileSync(new URL(path, import.meta.url)
 
 describe('runtime request policy', () => {
     it('leaves RPC retries to the bounded backend gateway', () => {
-        const source = readSource('../main.tsx')
+        const source = readSource('../DappRoot.tsx')
 
         expect(source).toContain('retry: false')
         expect(source).not.toMatch(/retry:\s*2/)

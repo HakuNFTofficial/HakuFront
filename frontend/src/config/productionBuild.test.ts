@@ -10,6 +10,7 @@ describe('production frontend build', () => {
     })
 
     it('fails with an actionable error when the preview CID is missing', async () => {
+        vi.stubEnv('VITE_MAINTENANCE_MODE', 'false')
         vi.stubEnv('VITE_IPFS_PREVIEW_CID', '')
 
         await expect(
@@ -21,5 +22,18 @@ describe('production frontend build', () => {
         ).rejects.toThrow(
             /"code":"FRONTEND_BUILD_ENV_MISSING".*"missingFields":\["VITE_IPFS_PREVIEW_CID"\]/,
         )
+    })
+
+    it('allows an explicit maintenance build without the preview CID', async () => {
+        vi.stubEnv('VITE_MAINTENANCE_MODE', 'true')
+        vi.stubEnv('VITE_IPFS_PREVIEW_CID', '')
+
+        await expect(
+            build({
+                configFile: resolve(process.cwd(), 'vite.config.ts'),
+                logLevel: 'silent',
+                build: { write: false },
+            }),
+        ).resolves.toBeDefined()
     })
 })
