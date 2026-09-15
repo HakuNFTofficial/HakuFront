@@ -89,8 +89,10 @@ Expected: the page test passes.
 ### Task 3: Gate the dApp at the root
 
 **Files:**
+- Create: `frontend/src/DappRoot.tsx`
 - Create: `frontend/src/RootView.tsx`
 - Create: `frontend/src/RootView.test.tsx`
+- Create: `frontend/src/mainMaintenanceIsolation.test.ts`
 - Modify: `frontend/src/main.tsx`
 
 - [ ] **Step 1: Write a failing root-selection test**
@@ -99,13 +101,16 @@ Expected: the page test passes.
 render(<RootView maintenanceMode={true}><div>Live dApp</div></RootView>)
 expect(screen.getByRole('heading', { name: 'Sealing the next chapter.' })).toBeInTheDocument()
 expect(screen.queryByText('Live dApp')).not.toBeInTheDocument()
+
+expect(mainSource).toContain("import('./DappRoot')")
+expect(mainSource).not.toMatch(/from ['"]\.\/wagmi['"]/)
 ```
 
 - [ ] **Step 2: Run the root test and verify it fails because the gate is missing**
 
 Run: `npm test -- src/RootView.test.tsx`
 
-Expected: the `RootView` module cannot be resolved.
+Expected: the `RootView` module cannot be resolved and the entry still statically imports the dApp provider modules.
 
 - [ ] **Step 3: Implement and wire the root gate**
 
@@ -114,16 +119,20 @@ export function RootView({ maintenanceMode, children }: PropsWithChildren<{ main
     return maintenanceMode ? <MaintenancePage /> : <>{children}</>
 }
 
-<RootView maintenanceMode={isMaintenanceMode(import.meta.env.VITE_MAINTENANCE_MODE)}>
-    <WagmiProvider config={config}>...</WagmiProvider>
-</RootView>
+if (maintenanceMode) {
+    root.render(<RootView maintenanceMode />)
+} else {
+    void import('./DappRoot').then(({ DappRoot }) => {
+        root.render(<RootView maintenanceMode={false}><DappRoot /></RootView>)
+    })
+}
 ```
 
 - [ ] **Step 4: Re-run the root and component tests**
 
-Run: `npm test -- src/RootView.test.tsx src/components/MaintenancePage.test.tsx`
+Run: `npm test -- src/RootView.test.tsx src/mainMaintenanceIsolation.test.ts src/components/MaintenancePage.test.tsx`
 
-Expected: both test files pass.
+Expected: all three test files pass and the maintenance entry has no static dApp provider imports.
 
 ### Task 4: Release verification
 
