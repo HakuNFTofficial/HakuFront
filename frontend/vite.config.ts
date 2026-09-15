@@ -17,7 +17,10 @@ function requireProductionEnvironment(): Plugin {
             if (command !== 'build' || mode !== 'production') return
 
             const env = loadEnv(mode, __dirname, '')
-            const requiredFields = ['VITE_IPFS_PREVIEW_CID'] as const
+            const maintenanceMode = env.VITE_MAINTENANCE_MODE === 'true'
+            const requiredFields = maintenanceMode
+                ? []
+                : ['VITE_IPFS_PREVIEW_CID'] as const
             const missingFields = requiredFields.filter((field) => !env[field]?.trim())
 
             if (missingFields.length > 0) {
