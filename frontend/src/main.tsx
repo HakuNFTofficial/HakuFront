@@ -7,6 +7,8 @@ import App from './App'
 import './index.css'
 import { logVersionInfo } from './utils/version'
 import { WebSocketProvider } from './providers/WebSocketProvider'
+import { RootView } from './RootView'
+import { isMaintenanceMode } from './config/maintenance'
 
 // Display version information in development environment or when debugging is needed
 if (import.meta.env?.DEV || import.meta.env?.MODE === 'development') {
@@ -25,12 +27,14 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById('root')!).render(
     <StrictMode>
-        <WagmiProvider config={config}>
-            <QueryClientProvider client={queryClient}>
-                <WebSocketProvider>
-                    <App />
-                </WebSocketProvider>
-            </QueryClientProvider>
-        </WagmiProvider>
+        <RootView maintenanceMode={isMaintenanceMode(import.meta.env.VITE_MAINTENANCE_MODE)}>
+            <WagmiProvider config={config}>
+                <QueryClientProvider client={queryClient}>
+                    <WebSocketProvider>
+                        <App />
+                    </WebSocketProvider>
+                </QueryClientProvider>
+            </WagmiProvider>
+        </RootView>
     </StrictMode>,
 )
