@@ -18,7 +18,7 @@
 - Modify: `frontend/src/config/productionBuild.test.ts`
 - Modify: `frontend/vite.config.ts`
 
-- [ ] **Step 1: Write failing tests for strict flag parsing and the maintenance build exception**
+- [x] **Step 1: Write failing tests for strict flag parsing and the maintenance build exception**
 
 ```ts
 expect(isMaintenanceMode('true')).toBe(true)
@@ -30,13 +30,13 @@ vi.stubEnv('VITE_IPFS_PREVIEW_CID', '')
 await expect(build({ configFile, logLevel: 'silent', build: { write: false } })).resolves.toBeDefined()
 ```
 
-- [ ] **Step 2: Run the focused tests and verify they fail because maintenance support does not exist**
+- [x] **Step 2: Run the focused tests and verify they fail because maintenance support does not exist**
 
 Run: `npm test -- src/config/maintenance.test.ts src/config/productionBuild.test.ts`
 
 Expected: the maintenance module is missing and the maintenance build still throws `FRONTEND_BUILD_ENV_MISSING`.
 
-- [ ] **Step 3: Implement strict parsing and conditional build validation**
+- [x] **Step 3: Implement strict parsing and conditional build validation**
 
 ```ts
 export function isMaintenanceMode(value: string | undefined): boolean {
@@ -47,7 +47,7 @@ const maintenanceMode = env.VITE_MAINTENANCE_MODE === 'true'
 const requiredFields = maintenanceMode ? [] : ['VITE_IPFS_PREVIEW_CID'] as const
 ```
 
-- [ ] **Step 4: Re-run the focused tests and verify they pass**
+- [x] **Step 4: Re-run the focused tests and verify they pass**
 
 Run: `npm test -- src/config/maintenance.test.ts src/config/productionBuild.test.ts`
 
@@ -60,7 +60,7 @@ Expected: both test files pass.
 - Create: `frontend/src/components/MaintenancePage.css`
 - Create: `frontend/src/components/MaintenancePage.test.tsx`
 
-- [ ] **Step 1: Write a failing render test**
+- [x] **Step 1: Write a failing render test**
 
 ```tsx
 render(<MaintenancePage />)
@@ -70,17 +70,17 @@ expect(screen.getByRole('link', { name: 'Follow Haku on X' })).toHaveAttribute('
 expect(screen.getByRole('link', { name: 'Join Haku on Discord' })).toHaveAttribute('href', 'https://discord.com/invite/zURfGaNf6p')
 ```
 
-- [ ] **Step 2: Run the component test and verify it fails because the page is missing**
+- [x] **Step 2: Run the component test and verify it fails because the page is missing**
 
 Run: `npm test -- src/components/MaintenancePage.test.tsx`
 
 Expected: the `MaintenancePage` module cannot be resolved.
 
-- [ ] **Step 3: Implement the page and responsive CSS**
+- [x] **Step 3: Implement the page and responsive CSS**
 
 Create a semantic `<main>` with a compact brand header, the Haku Sealed label, headline, exact announcement, accessible social links, and text status. Build the selected concentric seal with CSS pseudo-elements and add `@media (prefers-reduced-motion: reduce)` to stop animation.
 
-- [ ] **Step 4: Re-run the component test and verify it passes**
+- [x] **Step 4: Re-run the component test and verify it passes**
 
 Run: `npm test -- src/components/MaintenancePage.test.tsx`
 
@@ -95,7 +95,7 @@ Expected: the page test passes.
 - Create: `frontend/src/mainMaintenanceIsolation.test.ts`
 - Modify: `frontend/src/main.tsx`
 
-- [ ] **Step 1: Write a failing root-selection test**
+- [x] **Step 1: Write a failing root-selection test**
 
 ```tsx
 render(<RootView maintenanceMode={true}><div>Live dApp</div></RootView>)
@@ -106,13 +106,13 @@ expect(mainSource).toContain("import('./DappRoot')")
 expect(mainSource).not.toMatch(/from ['"]\.\/wagmi['"]/)
 ```
 
-- [ ] **Step 2: Run the root test and verify it fails because the gate is missing**
+- [x] **Step 2: Run the root test and verify it fails because the gate is missing**
 
 Run: `npm test -- src/RootView.test.tsx`
 
 Expected: the `RootView` module cannot be resolved and the entry still statically imports the dApp provider modules.
 
-- [ ] **Step 3: Implement and wire the root gate**
+- [x] **Step 3: Implement and wire the root gate**
 
 ```tsx
 export function RootView({ maintenanceMode, children }: PropsWithChildren<{ maintenanceMode: boolean }>) {
@@ -128,7 +128,7 @@ if (maintenanceMode) {
 }
 ```
 
-- [ ] **Step 4: Re-run the root and component tests**
+- [x] **Step 4: Re-run the root and component tests**
 
 Run: `npm test -- src/RootView.test.tsx src/mainMaintenanceIsolation.test.ts src/components/MaintenancePage.test.tsx`
 
@@ -140,25 +140,25 @@ Expected: all three test files pass and the maintenance entry has no static dApp
 - Modify: `frontend/package.json`
 - Modify: `frontend/package-lock.json`
 
-- [ ] **Step 1: Bump the frontend patch version to `1.0.65`**
+- [x] **Step 1: Bump the frontend patch version to `1.0.65`**
 
 Run: `npm version 1.0.65 --no-git-tag-version`
 
 Expected: both package files report version `1.0.65`.
 
-- [ ] **Step 2: Run the full frontend suite**
+- [x] **Step 2: Run the full frontend suite**
 
 Run: `npm test`
 
 Expected: all test files pass with zero failures.
 
-- [ ] **Step 3: Build the maintenance release**
+- [x] **Step 3: Build the maintenance release**
 
 Run: `VITE_MAINTENANCE_MODE=true npm run build`
 
 Expected: TypeScript and Vite finish successfully without `VITE_IPFS_PREVIEW_CID`.
 
-- [ ] **Step 4: Inspect the production page in a browser at desktop and mobile widths**
+- [x] **Step 4: Inspect the production page in a browser at desktop and mobile widths**
 
 Run: `npm run dev -- --host 127.0.0.1`
 
