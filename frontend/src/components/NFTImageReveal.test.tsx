@@ -88,7 +88,7 @@ describe('NFTImageReveal', () => {
         fireEvent.load(preview)
         expect(screen.getByTestId('nft-chip-overlay')).toBeInTheDocument()
         expect(screen.getByRole('img').getAttribute('src')).not.toContain(
-            '/QmWALFJVacNc1EpMKdxMuCedDVcNwmWoc3L2jqX8erAb6L/',
+            '/QmdJNd37nF7bAUpnDRxiC3hUvJZJsBCnXDjdS9GH8omZWG/',
         )
         expect(fetchSpy).not.toHaveBeenCalled()
     })

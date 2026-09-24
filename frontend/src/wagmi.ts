@@ -1,26 +1,21 @@
 import { http, createConfig } from 'wagmi'
 import { injected, walletConnect } from 'wagmi/connectors'
 import { defineChain } from 'viem'
+import { ARC_MAINNET } from './config/chain'
 
 export const RPC_PROXY_URL = '/api/rpc'
 
-// Define Arc testnet
-export const arcTestnet = defineChain({
-    id: 5042002,
-    name: 'Arc Testnet',
-    nativeCurrency: {
-        decimals: 18,
-        name: 'USDC',
-        symbol: 'USDC',
-    },
+export const arcMainnet = defineChain({
+    id: ARC_MAINNET.id,
+    name: ARC_MAINNET.name,
+    nativeCurrency: ARC_MAINNET.nativeCurrency,
     rpcUrls: {
         default: {
-            http: [
-                'https://rpc.blockdaemon.testnet.arc.network',
-                'https://rpc.quicknode.testnet.arc.network',
-                'https://rpc.drpc.testnet.arc.network',
-            ],
+            http: [...ARC_MAINNET.rpcUrls],
         },
+    },
+    blockExplorers: {
+        default: { name: 'Arc Explorer', url: ARC_MAINNET.explorerUrl },
     },
 })
 
@@ -65,11 +60,11 @@ if (
 }
 
 export const config = createConfig({
-    chains: [arcTestnet],
+    chains: [arcMainnet],
     connectors,
     multiInjectedProviderDiscovery: true,
     transports: {
-        [arcTestnet.id]: http(RPC_PROXY_URL, {
+        [arcMainnet.id]: http(RPC_PROXY_URL, {
             batch: {
                 batchSize: 20,
                 wait: 50,

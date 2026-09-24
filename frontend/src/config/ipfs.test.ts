@@ -11,7 +11,7 @@ describe('IPFS configuration', () => {
     const { getIPFSImageUrl } = await import('./ipfs')
 
     expect(getIPFSImageUrl('572.png')).toBe(
-      'https://gateway.pinata.cloud/ipfs/QmWALFJVacNc1EpMKdxMuCedDVcNwmWoc3L2jqX8erAb6L/572.png',
+      'https://gateway.pinata.cloud/ipfs/QmdJNd37nF7bAUpnDRxiC3hUvJZJsBCnXDjdS9GH8omZWG/572.png',
     )
   })
 
@@ -20,7 +20,7 @@ describe('IPFS configuration', () => {
     const { getIPFSMetadataUrl } = await import('./ipfs')
 
     expect(getIPFSMetadataUrl('572.json')).toBe(
-      'https://gateway.pinata.cloud/ipfs/Qmeub98s5ZPPANZVksF8Vs6CbPT3Xe5PEmkFEhgMP9ovzK/572.json',
+      'https://gateway.pinata.cloud/ipfs/QmeFzwu5hYhmPtjenX8tAZT2MKEfrDzLHoNW9Ac8HNnVRU/572.json',
     )
   })
 
@@ -28,7 +28,7 @@ describe('IPFS configuration', () => {
     const { IPFS_CONFIG } = await import('./ipfs')
 
     expect(IPFS_CONFIG.ROOT_CID).toBe(
-      'QmUCmfy48PsvUQBEHxeqPZTzQabFDY8U1CkT4ZFQN1pSQH',
+      'QmcvsNxSUiTc5t9j4Q9YvDPmjY7sC5YancaCxGvi6zZbrM',
     )
   })
 
@@ -68,7 +68,7 @@ describe('IPFS configuration', () => {
     const { getIPFSImageUrl } = await import('./ipfs')
 
     expect(getIPFSImageUrl('572.png')).toBe(
-      'https://images.example/ipfs/QmWALFJVacNc1EpMKdxMuCedDVcNwmWoc3L2jqX8erAb6L/572.png',
+      'https://images.example/ipfs/QmdJNd37nF7bAUpnDRxiC3hUvJZJsBCnXDjdS9GH8omZWG/572.png',
     )
   })
 

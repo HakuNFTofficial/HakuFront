@@ -444,7 +444,7 @@ export function Swap() {
         if (chainId !== undefined && chainId !== REQUIRED_CHAIN_ID) {
             const currentChainName = getChainName(chainId)
             const requiredChainName = getChainName(REQUIRED_CHAIN_ID)
-            alert(`⚠️ Network Mismatch!\n\nCurrent Network: ${currentChainName} (ID: ${chainId})\nRequired Network: ${requiredChainName} (ID: ${REQUIRED_CHAIN_ID})\n\nPlease switch to the correct test network before trading.`)
+            alert(`⚠️ Network Mismatch!\n\nCurrent Network: ${currentChainName} (ID: ${chainId})\nRequired Network: ${requiredChainName} (ID: ${REQUIRED_CHAIN_ID})\n\nPlease switch to Arc Mainnet before trading.`)
             return
         }
 
@@ -479,7 +479,7 @@ export function Swap() {
         if (chainId !== undefined && chainId !== REQUIRED_CHAIN_ID) {
             const currentChainName = getChainName(chainId)
             const requiredChainName = getChainName(REQUIRED_CHAIN_ID)
-            alert(`⚠️ Network Mismatch!\n\nCurrent Network: ${currentChainName} (ID: ${chainId})\nRequired Network: ${requiredChainName} (ID: ${REQUIRED_CHAIN_ID})\n\nPlease switch to the correct test network before trading.`)
+            alert(`⚠️ Network Mismatch!\n\nCurrent Network: ${currentChainName} (ID: ${chainId})\nRequired Network: ${requiredChainName} (ID: ${REQUIRED_CHAIN_ID})\n\nPlease switch to Arc Mainnet before trading.`)
             return
         }
 

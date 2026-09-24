@@ -10,7 +10,7 @@ import { VersionChecker } from './components/VersionChecker'
 import { NetworkMismatchModal } from './components/NetworkMismatchModal'
 import { WalletConnectModal } from './components/WalletConnectModal'
 import { useWalletChainId } from './hooks/useWalletChainId'
-import { REQUIRED_CHAIN_ID, getChainName } from './config/chain'
+import { ARC_MAINNET, REQUIRED_CHAIN_ID, getChainName } from './config/chain'
 import { CONTRACTS } from './config/contracts'
 
 function App() {
@@ -121,17 +121,10 @@ function App() {
                         params: [
                             {
                                 chainId: targetChainIdHex,
-                                chainName: 'Arc Testnet',
-                                nativeCurrency: {
-                                    name: 'USDC',
-                                    symbol: 'USDC',
-                                    decimals: 18,
-                                },
-                                rpcUrls: [
-                                    'https://rpc.blockdaemon.testnet.arc.network',
-                                    'https://rpc.quicknode.testnet.arc.network',
-                                    'https://rpc.drpc.testnet.arc.network',
-                                ],
+                                chainName: ARC_MAINNET.name,
+                                nativeCurrency: ARC_MAINNET.nativeCurrency,
+                                rpcUrls: [...ARC_MAINNET.rpcUrls],
+                                blockExplorerUrls: [ARC_MAINNET.explorerUrl],
                             },
                         ],
                     })

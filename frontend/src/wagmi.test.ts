@@ -72,6 +72,39 @@ describe('wagmi wallet configuration', () => {
         expect(mocks.injected).toHaveBeenCalledTimes(1)
         expect(mocks.walletConnect).not.toHaveBeenCalled()
     })
+
+    test('connects wallets to Arc Mainnet through the same-origin RPC gateway', async () => {
+        await import('./wagmi')
+
+        expect(mocks.defineChain).toHaveBeenCalledWith(
+            expect.objectContaining({
+                id: 5042,
+                name: 'Arc',
+                nativeCurrency: {
+                    decimals: 18,
+                    name: 'USDC',
+                    symbol: 'USDC',
+                },
+                rpcUrls: {
+                    default: {
+                        http: expect.arrayContaining(['https://rpc.mainnet.arc.io']),
+                    },
+                },
+                blockExplorers: {
+                    default: {
+                        name: 'Arc Explorer',
+                        url: 'https://explorer.arc.io',
+                    },
+                },
+            }),
+        )
+        expect(mocks.createConfig).toHaveBeenCalledWith(
+            expect.objectContaining({
+                chains: [expect.objectContaining({ id: 5042 })],
+                transports: { 5042: 'http:/api/rpc' },
+            }),
+        )
+    })
 })
 
 describe('wagmi transport', () => {

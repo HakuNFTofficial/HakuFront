@@ -19,13 +19,13 @@ export const IPFS_CONFIG = {
     GATEWAY: IPFS_GATEWAY,
 
     // Image CID (for grayscale large images in My NFTs area)
-    IMAGE_CID: 'QmWALFJVacNc1EpMKdxMuCedDVcNwmWoc3L2jqX8erAb6L',
+    IMAGE_CID: 'QmdJNd37nF7bAUpnDRxiC3hUvJZJsBCnXDjdS9GH8omZWG',
 
     // Metadata CID (for JSON metadata, baseCID in contract)
-    METADATA_CID: 'Qmeub98s5ZPPANZVksF8Vs6CbPT3Xe5PEmkFEhgMP9ovzK',
+    METADATA_CID: 'QmeFzwu5hYhmPtjenX8tAZT2MKEfrDzLHoNW9Ac8HNnVRU',
 
     // Root CID (if needed)
-    ROOT_CID: 'QmUCmfy48PsvUQBEHxeqPZTzQabFDY8U1CkT4ZFQN1pSQH',
+    ROOT_CID: 'QmcvsNxSUiTc5t9j4Q9YvDPmjY7sC5YancaCxGvi6zZbrM',
 } as const
 
 /**

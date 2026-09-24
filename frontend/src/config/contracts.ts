@@ -1,15 +1,15 @@
-// Contract addresses from deployment on Arc Testnet
+// Contract addresses for Arc Mainnet (chain ID 5042)
 export const CONTRACTS = {
-    POOL_MANAGER: '0x447032aAa569105437516dA21792862Bf05422C6',
-    POSITION_MANAGER: '0x5FC8d32690cc91D4c39d9d3abcBD16989F875707',
+    POOL_MANAGER: '0x8366a39CC670B4001A1121B8F6A443A643e40951',
+    POSITION_MANAGER: '0x6049c9a0e26405C0985f9E3685C87d0aE917f82B',
     TOKEN_A: '0x0000000000000000000000000000000000000000', // Arc native USDC
-    TOKEN_B: '0x19c02CC2118Afe3CB59bb2f777d1a1124c7A6C12', // HakuToken Proxy
-    SWAP_ROUTER: '0x100e99CB47c737Db4f3399a0b6195276cF9f77a9',
-    ADD_LIQUIDITY_EXECUTOR: '0x6B184D87FdcD84C111a149289DCdAA40376EEB24', // AddLiquidityExecutor Proxy
+    TOKEN_B: '0x4CB940e83b3D404e19ec004468c74f58488447f0', // HakuToken Proxy
+    SWAP_ROUTER: '0x30487552012df20a97df8C1d93c68921Feb8246d', // SwapExecutor Proxy
+    ADD_LIQUIDITY_EXECUTOR: '0x8D99071E498240Ee3750dd7B96297eEae5B556E7', // AddLiquidityExecutor Proxy
     // V4Quoter contract address (must match QUOTER in PoolConfig.sol)
-    QUOTER: '0xda497413594473EC8dDDeC7711595D75239A47E1', // V4Quoter contract
+    QUOTER: '0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94', // V4Quoter contract
     // HukuNFT contract address
-    HUKU_NFT: '0x703CEB677e9fbB1f4c6E917195c3b63B7EFA4Fe8',
+    HUKU_NFT: '0x0000000000000000000000000000000000000000', // Set after mainnet deployment
 } as const
 
 /**
@@ -32,9 +32,9 @@ export const POOL_CONFIG = {
     FEE: DYNAMIC_FEE_FLAG,  // Dynamic fee flag (0x800000) - actual fee set by hook
     HOOK_FEE: 3000,         // Actual fee rate set by hook: 0.3% (3000 basis points)
     TICK_SPACING: 60,       // Tick spacing
-    HOOKS: '0xb7812d8f30e1e0a0434ac917b868aaeccabf4088' as `0x${string}`, // FeeGrowthHook
-    SQRT_PRICE_X96: '3543191142285914205922034323214', // 1 native USDC = 2000 HakuToken
-    POOL_ID: '0x12512a4efd2e73344522fd8f20520575d943f6127fde7a0b6c8d70f41cfe8f5c' as `0x${string}`,
+    HOOKS: '0x3504A8f7012262D6f7aDba974074a07cd0Cd0080' as `0x${string}`, // FeeGrowthHook
+    SQRT_PRICE_X96: '35431911422859142059220343232145', // 1 native USDC = 200,000 HAKU
+    POOL_ID: '0x97599ed312513acfed3833173452d6bcf330c1bf368945b84d0619d54bef52d7' as `0x${string}`,
 
     // Other contract addresses (must match PoolConfig.sol)
     QUOTER: CONTRACTS.QUOTER, // V4Quoter contract address
