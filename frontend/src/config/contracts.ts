@@ -9,7 +9,7 @@ export const CONTRACTS = {
     // V4Quoter contract address (must match QUOTER in PoolConfig.sol)
     QUOTER: '0x8Dc178eFB8111BB0973Dd9d722ebeFF267c98F94', // V4Quoter contract
     // HukuNFT contract address
-    HUKU_NFT: '0x0000000000000000000000000000000000000000', // Set after mainnet deployment
+    HUKU_NFT: '0x83a5045AD7e1814046697b1536CC0af1A4d37A32', // Arc Mainnet HukuNFT Proxy
 } as const
 
 export const HUKU_NFT_DEPLOYED =
