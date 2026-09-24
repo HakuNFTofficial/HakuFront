@@ -3,7 +3,7 @@ import { useAccount, useWriteContract, useWaitForTransactionReceipt, useReadCont
 import { formatUnits } from 'viem'
 import { NFTProfileThumbnail } from './NFTProfileThumbnail'
 import { NFTImageViewer } from './NFTImageViewer'
-import { CONTRACTS, HUKU_NFT_ABI, ERC20_ABI } from '../config/contracts'
+import { CONTRACTS, HUKU_NFT_ABI, ERC20_ABI, HUKU_NFT_DEPLOYED } from '../config/contracts'
 import { useEventAssociation } from '../hooks/useEventAssociation'
 import { useWebSocketEvent, useWebSocketReconnect } from '../providers/WebSocketProvider'
 import { BALANCE_REFETCH_MS, STATIC_REFETCH_MS, visibleRefetchInterval } from '../config/queryPolicy'
@@ -149,6 +149,7 @@ export function NFTLifecycleGrid() {
         abi: HUKU_NFT_ABI,
         functionName: 'mintPrice',
         query: {
+            enabled: HUKU_NFT_DEPLOYED,
             refetchInterval: visibleRefetchInterval(STATIC_REFETCH_MS),
             refetchIntervalInBackground: false,
         },
@@ -170,7 +171,7 @@ export function NFTLifecycleGrid() {
             ? [address, CONTRACTS.HUKU_NFT]
             : undefined,
         query: {
-            enabled: !!address && !!CONTRACTS.HUKU_NFT,
+            enabled: !!address && HUKU_NFT_DEPLOYED,
             refetchInterval: visibleRefetchInterval(BALANCE_REFETCH_MS),
             refetchIntervalInBackground: false,
         },
@@ -665,7 +666,7 @@ export function NFTLifecycleGrid() {
         <div>
             <h3 className="text-lg font-bold text-white mb-1 flex items-center gap-2">
                 My NFTs
-                <button
+                {HUKU_NFT_DEPLOYED && <button
                     onClick={handleCopyContractAddress}
                     className="flex items-center justify-center text-xs text-gray-400 hover:text-gray-300 transition-all duration-200"
                     title={copied ? "Copied" : CONTRACTS.HUKU_NFT}
@@ -680,8 +681,13 @@ export function NFTLifecycleGrid() {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                         </svg>
                     )}
-                </button>
+                </button>}
             </h3>
+            {!HUKU_NFT_DEPLOYED && (
+                <p role="status" className="mb-3 text-sm text-amber-300">
+                    NFT minting is not available yet. The mainnet NFT contract has not been deployed.
+                </p>
+            )}
 
             <div className="mb-6 mt-4 flex flex-wrap gap-2">
                 <button
@@ -791,6 +797,10 @@ export function NFTLifecycleGrid() {
                                     {nft.is_mint === 2 && nft.token_id ? (
                                                 <button
                                                     onClick={async () => {
+                                                if (!HUKU_NFT_DEPLOYED) {
+                                                    alert('NFT minting and burning are not available until the mainnet NFT contract is deployed.')
+                                                    return
+                                                }
                                                 if (!address || !nft.token_id) {
                                                             alert('Please connect wallet first')
                                                             return
@@ -889,6 +899,10 @@ export function NFTLifecycleGrid() {
                                                 <>
                                                 <button
                                                     onClick={async () => {
+                                                if (!HUKU_NFT_DEPLOYED) {
+                                                    alert('NFT minting is not available until the mainnet NFT contract is deployed.')
+                                                    return
+                                                }
                                                                 // Ensure is_mint === 0 before minting
                                                 if (mintingNftId === nft.nft_id || nft.is_mint !== 0) return
 
@@ -1099,6 +1113,10 @@ export function NFTLifecycleGrid() {
                                                     {/* Mint button */}
                                                     <button
                                                         onClick={async () => {
+                                                            if (!HUKU_NFT_DEPLOYED) {
+                                                                alert('NFT minting is not available until the mainnet NFT contract is deployed.')
+                                                                return
+                                                            }
                                                             if (!address) {
                                                                 alert('Please connect wallet first')
                                                                 return

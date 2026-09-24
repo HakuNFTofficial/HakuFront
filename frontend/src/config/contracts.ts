@@ -12,6 +12,9 @@ export const CONTRACTS = {
     HUKU_NFT: '0x0000000000000000000000000000000000000000', // Set after mainnet deployment
 } as const
 
+export const HUKU_NFT_DEPLOYED =
+    CONTRACTS.HUKU_NFT.toLowerCase() !== '0x0000000000000000000000000000000000000000'
+
 /**
  * Dynamic Fee Flag (from LPFeeLibrary)
  * This flag indicates that the pool uses dynamic fees set by the hook
