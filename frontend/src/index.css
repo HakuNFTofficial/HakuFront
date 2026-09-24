@@ -14,7 +14,7 @@ body {
 }
 
 .nft-preview-shadow {
-  filter: grayscale(1) blur(10px) brightness(0.16) contrast(0.72);
+  filter: grayscale(1) blur(10px) brightness(0.5) contrast(0.8);
   transform: scale(1.04);
 }
 
