@@ -21,12 +21,38 @@ interface NFTListResponse {
     page: number
     page_size: number
     total_pages: number
+    counts?: NFTStatusCounts
+    chip_balance?: ChipBalanceSummary
     nfts: NFT[]
+}
+
+interface NFTStatusCounts {
+    in_progress: number
+    mintable: number
+    minting: number
+    burnable: number
+    profile: number
+}
+
+interface ChipBalanceSummary {
+    authoritative_chip_count: number | null
+    materialized_chip_count: number | null
+    pending_chip_count: number | null
+    sync_status: 'pending' | 'ready' | 'failed' | 'unavailable'
+    updated_at: string | null
 }
 
 interface NFTUpdateEvent {
     user_address: string
     nfts: NFT[]
+}
+
+interface ChipBalanceUpdateEvent {
+    user_address: string
+    authoritative_chip_count: number
+    materialized_chip_count: number
+    pending_chip_count: number
+    sync_status: 'ready'
 }
 
 interface NFTSectionProps {
@@ -38,6 +64,14 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
     const [nfts, setNfts] = useState<NFT[]>([])
     const [page, setPage] = useState(1)
     const [totalPages, setTotalPages] = useState(1)
+    const [counts, setCounts] = useState<NFTStatusCounts>({
+        in_progress: 0,
+        mintable: 0,
+        minting: 0,
+        burnable: 0,
+        profile: 0,
+    })
+    const [chipBalance, setChipBalance] = useState<ChipBalanceSummary | null>(null)
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
     const [completedNftId, setCompletedNftId] = useState<number | null>(null)
@@ -50,6 +84,7 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
     const fetchNFTSnapshot = useCallback(async (showLoading = true) => {
         if (!address) {
             setNfts([])
+            setChipBalance(null)
             return
         }
 
@@ -75,6 +110,20 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             const nextTotalPages = Math.max(1, data.total_pages)
             setTotalPages(nextTotalPages)
             setNfts(data.nfts)
+            setCounts(data.counts ?? {
+                in_progress: 0,
+                mintable: 0,
+                minting: 0,
+                burnable: 0,
+                profile: 0,
+            })
+            setChipBalance(data.chip_balance ?? {
+                authoritative_chip_count: null,
+                materialized_chip_count: null,
+                pending_chip_count: null,
+                sync_status: 'pending',
+                updated_at: null,
+            })
             if (page > nextTotalPages) setPage(nextTotalPages)
         } catch (fetchError) {
             console.error('[NFTSection] Failed to load incomplete NFTs:', fetchError)
@@ -103,6 +152,17 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
         void fetchNFTSnapshot(false)
     }, Boolean(address))
 
+    useWebSocketEvent<ChipBalanceUpdateEvent>('ChipBalanceUpdate', (balanceUpdate) => {
+        if (!address || balanceUpdate.user_address.toLowerCase() !== address.toLowerCase()) {
+            return
+        }
+        setChipBalance({
+            ...balanceUpdate,
+            updated_at: new Date().toISOString(),
+        })
+        void fetchNFTSnapshot(false)
+    }, Boolean(address))
+
     useWebSocketReconnect(() => {
         void fetchNFTSnapshot(false)
     })
@@ -118,6 +178,24 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
         return () => window.clearTimeout(timeout)
     }, [completedNftId])
 
+    useEffect(() => {
+        if (!address || !chipBalance) return
+        const hasPendingMaterialization = typeof chipBalance.pending_chip_count === 'number'
+            && chipBalance.pending_chip_count !== 0
+        const shouldPoll = chipBalance.sync_status === 'pending'
+            || chipBalance.sync_status === 'failed'
+            || hasPendingMaterialization
+        if (!shouldPoll) return
+        const interval = window.setInterval(() => {
+            void fetchNFTSnapshot(false)
+        }, 3_000)
+        return () => window.clearInterval(interval)
+    }, [address, chipBalance, fetchNFTSnapshot])
+
+    const formatChipCount = (value: number) => new Intl.NumberFormat('en-US').format(value)
+    const authoritativeChipCount = chipBalance?.authoritative_chip_count
+    const materializedChipCount = chipBalance?.materialized_chip_count
+
     return (
         <div>
             <h3 className="mb-1 flex items-center gap-2 text-lg font-bold text-white">
@@ -130,6 +208,41 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
                     Profile
                 </button>
             </h3>
+
+            {address && !isLoading && chipBalance?.sync_status === 'pending' && (
+                <div className="mb-3 rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-200">
+                    Syncing chips…
+                </div>
+            )}
+
+            {address && !isLoading && chipBalance?.sync_status === 'failed' && (
+                <div className="mb-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
+                    Chip balance sync failed. Retrying…
+                </div>
+            )}
+
+            {address && !isLoading && chipBalance?.sync_status === 'unavailable' && (
+                <div className="mb-3 rounded-lg border border-gray-700 bg-[#171923] px-3 py-2 text-sm text-gray-400">
+                    Chip balance is not tracked for this wallet.
+                </div>
+            )}
+
+            {address && !isLoading && chipBalance?.sync_status === 'ready'
+                && authoritativeChipCount !== null && authoritativeChipCount !== undefined && (
+                <div className="mb-3 rounded-lg border border-gray-700 bg-[#171923] px-3 py-2">
+                    <div className="text-sm font-semibold text-white">
+                        {formatChipCount(authoritativeChipCount)} chips
+                    </div>
+                    {materializedChipCount !== null && materializedChipCount !== undefined
+                        && chipBalance.pending_chip_count !== 0 && (
+                        <div className="mt-1 text-xs text-gray-400">
+                            {chipBalance.pending_chip_count !== null && chipBalance.pending_chip_count > 0
+                                ? `Allocating fragments: ${formatChipCount(materializedChipCount)} / ${formatChipCount(authoritativeChipCount)}`
+                                : `Reclaiming fragments: ${formatChipCount(materializedChipCount)} → ${formatChipCount(authoritativeChipCount)}`}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {completedNftId !== null && (
                 <div className="mb-3 flex items-center justify-between rounded-lg border border-green-500/40 bg-green-500/10 px-3 py-2 text-sm text-green-300">
@@ -151,9 +264,23 @@ export function NFTSection({ onViewAll }: NFTSectionProps = {}) {
             ) : error ? (
                 <div className="alert alert-error"><span>{error}</span></div>
             ) : nfts.length === 0 ? (
-                <div className="py-10 text-center text-gray-500">
-                    No incomplete NFT fragments
-                </div>
+                counts.mintable > 0 ? (
+                    <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-6 text-center text-green-200">
+                        <div className="font-medium">{counts.mintable} {counts.mintable === 1 ? 'NFT is' : 'NFTs are'} complete</div>
+                        <button type="button" onClick={onViewAll} className="mt-2 text-sm font-medium underline">
+                            Open Profile
+                        </button>
+                    </div>
+                ) : chipBalance?.sync_status === 'ready' && authoritativeChipCount === 0 ? (
+                    <div className="py-10 text-center text-gray-500">
+                        No NFT fragments yet
+                    </div>
+                ) : chipBalance?.sync_status === 'ready' && typeof authoritativeChipCount === 'number'
+                    && authoritativeChipCount > 0 ? (
+                    <div className="py-10 text-center text-gray-500">
+                        Fragment cards will appear as allocation completes.
+                    </div>
+                ) : null
             ) : (
                 <>
                     <div className="grid grid-cols-2 gap-4">
