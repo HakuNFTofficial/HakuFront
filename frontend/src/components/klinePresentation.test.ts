@@ -42,4 +42,15 @@ describe('K-line presentation', () => {
         expect(candlestickOptions).toContain('lastValueVisible: false')
         expect(appSource).toContain('https://www.tradingview.com/')
     })
+
+    it('uses already-normalized API volume for historical and live bars', () => {
+        const source = readFileSync(
+            resolve(process.cwd(), 'src/components/KLineChart.tsx'),
+            'utf8',
+        )
+
+        expect(source).toContain('value: parseFloat(item.volume_base),')
+        expect(source).toContain('value: parseFloat(event.volume_base),')
+        expect(source).not.toMatch(/volume_base\)\s*\/\s*1e18/)
+    })
 })

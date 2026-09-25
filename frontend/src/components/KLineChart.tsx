@@ -77,7 +77,7 @@ export function KLineChart() {
 
             const volumeData = data.map(item => ({
                 time: item.start_time as UTCTimestamp,
-                value: parseFloat(item.volume_base) / 1e18,
+                value: parseFloat(item.volume_base),
                 color: parseFloat(item.close) >= parseFloat(item.open) ? '#4ade8080' : '#ef444480'
             }))
 
@@ -143,7 +143,7 @@ export function KLineChart() {
 
                 const volumeData = {
                     time: event.start_time as UTCTimestamp,
-                    value: parseFloat(event.volume_base) / 1e18, // Scale down volume from wei
+                    value: parseFloat(event.volume_base), // API volume is already in display units.
                     color: parseFloat(event.close) >= parseFloat(event.open) ? '#4ade8080' : '#ef444480'
                 }
 
